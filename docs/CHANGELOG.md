@@ -2,6 +2,53 @@
 
 ---
 
+## CODE v1.0 — 2026-05-12
+
+Code implementation complete against SPEC v3.0 (patch 4). All 22 tasks in
+`docs/code_implementation.md` finished; `uv run pytest tests/` → **146 passed**;
+all `src/` modules import cleanly.
+
+1. **All nine `src/` modules implemented:** `utils`, `data_loader`,
+   `data_inspector`, `data_normalizer`, `preprocessing`, `ner`, `summarizer`,
+   `similarity`, `topic_predictor`.
+
+2. **All nine test modules pass:** `test_data_loader` (7), `test_data_inspector`
+   (21), `test_data_normalizer` (28), `test_preprocessing` (17), `test_ner` (28),
+   `test_summarizer` (18), `test_similarity` (10), `test_topic_predictor` (17).
+   Coverage exceeds the per-task minimum in every file. spaCy, HuggingFace,
+   and SentenceTransformer interactions are mocked — no model downloads in CI.
+
+3. **Notebook orchestration delivered.** `notebooks/analysis.ipynb` contains the
+   17 cells specified in SPEC §"Notebook orchestration" (16 code + 1 markdown
+   placeholder for Cell 17). `jupyter nbconvert --to script` validates the JSON.
+
+4. **Spec review script delivered.** `scripts/review_spec.py` wraps the
+   Anthropic SDK with extended thinking (model `claude-opus-4-7`, thinking
+   budget 10000 tokens) and loads `.env` via `python-dotenv` so the
+   `ANTHROPIC_API_KEY` from a local `.env` file is visible to the SDK.
+
+5. **Production bug surfaced and fixed by tests.** `similarity.calculate_similarity`
+   batched both inputs into one `model.encode(...)` call expecting a `(2, dim)`
+   return; the `mock_embedding_model` fixture returns `(1, dim)` per call, so
+   the second slice was empty and `cos_sim[0][0]` raised `IndexError`. Fixed by
+   encoding `original` and `summary` in separate calls (still matches the
+   SPEC's `(1, 1)` cos_sim output shape). Logged in
+   `docs/code_implementation_issues.md` §20.1.
+
+6. **Deviation log.** Every under-specified case, judgment call, or fix during
+   implementation is appended to `docs/code_implementation_issues.md` — 24
+   entries spanning tasks 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+   19, 20, 21, 22. This is the auditable trail of where the code diverges from
+   the literal spec wording.
+
+7. **TLS workaround documented.** All `uv` and HuggingFace calls require
+   `--native-tls` (uv) and `truststore.inject_into_ssl()` (Python) on this
+   machine because of a corporate MITM CA. The acceptance criteria for every
+   model-loading task were verified with `UV_NATIVE_TLS=1 uv run --native-tls
+   ...`.
+
+---
+
 ## SPEC v3.0 — 2026-05-11 (patch 4)
 
 Spec gaps surfaced during test authoring (Phase 4 of the AI engineering workflow).

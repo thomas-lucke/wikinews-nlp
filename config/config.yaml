@@ -1,0 +1,51 @@
+data:
+  source_url: "https://github.com/PrimerAI/WikiNews-multilingual"
+  raw_path: "data/raw"
+  min_article_length: 100
+
+topics:
+  selected:
+    - "Politics and conflicts"
+    - "Science and technology"
+    - "Sports"
+  articles_per_topic_min: 10
+  articles_per_topic_max: 20
+
+countries:
+  selected:
+    - "United States"
+    - "Germany"
+
+languages:
+  ner: ["en", "de"]
+  summarization: ["en"]
+
+models:
+  ner_english: "dslim/bert-base-NER"
+  ner_german: "Davlan/bert-base-multilingual-cased-ner-hrl"
+  spacy_english: "en_core_web_sm"
+  spacy_german: "de_core_news_sm"
+  summarization: "facebook/bart-large-cnn"
+  similarity: "sentence-transformers/all-MiniLM-L6-v2"
+  topic_prediction: "facebook/bart-large-mnli"
+
+summarization:
+  min_summary_length: 50
+  max_summary_length: 200
+
+ner:
+  chunk_size: 400
+  chunk_overlap: 50
+  error_score_threshold: 0.6
+
+topic_prediction:
+  sample_size: 30
+  hypothesis_template: "This news article is about {}."
+
+similarity:
+  threshold: 0.8
+
+logging:
+  log_file: "logs/pipeline.log"
+
+random_seed: 42
