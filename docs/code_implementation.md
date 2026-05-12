@@ -7,28 +7,32 @@ Copy each prompt into a new Claude Code session. Complete each task fully and ru
 
 ## Task List
 
-1. [Project scaffold and config](#task-1-project-scaffold-and-config)
-2. [src/utils.py](#task-2-srcutilspy)
-3. [src/data_loader.py](#task-3-srcdataloaderpy)
-4. [src/data_inspector.py — format detection and raw profiling](#task-4-srcdatainspectorpy--format-detection-and-raw-profiling)
-5. [src/data_inspector.py — category profile and validation](#task-5-srcdatainspectorpy--category-profile-and-validation)
-6. [src/data_normalizer.py — helpers and load_raw_records](#task-6-srcdatanormalizerpy--helpers-and-load_raw_records)
-7. [src/data_normalizer.py — normalise_articles](#task-7-srcdatanormalizerpy--normalisearticles)
-8. [src/preprocessing.py](#task-8-srcpreprocessingpy)
-9. [src/ner.py — chunking and pipeline](#task-9-srcnerpy--chunking-and-pipeline)
-10. [src/ner.py — run_ner and analysis functions](#task-10-srcnerpy--run_ner-and-analysis-functions)
-11. [src/summarizer.py](#task-11-srcsummarizerpy)
-12. [src/similarity.py](#task-12-srcsimilaritypy)
-13. [src/topic_predictor.py](#task-13-srctopicpredictorpy)
-14. [tests/conftest.py and test_data_loader.py](#task-14-testsconftestpy-and-testdataloaderpy)
-15. [tests/test_data_inspector.py](#task-15-teststestdatainspectorpy)
-16. [tests/test_data_normalizer.py](#task-16-teststestdatanormalizerpy)
-17. [tests/test_preprocessing.py](#task-17-teststestpreprocessingpy)
-18. [tests/test_ner.py](#task-18-teststestnerpy)
-19. [tests/test_summarizer.py](#task-19-teststestsummarizerpy)
-20. [tests/test_similarity.py and test_topic_predictor.py](#task-20-teststestsimilaritypy-and-testtopicpredictorpy)
-21. [scripts/review_spec.py](#task-21-scriptsreviewspecpy)
-22. [notebooks/analysis.ipynb](#task-22-notebooksanalysisipynb)
+- [Phase 5 — Code Implementation Guide](#phase-5--code-implementation-guide)
+    - [Wikinews NLP Analysis Pipeline — SPEC\_v3.md](#wikinews-nlp-analysis-pipeline--spec_v3md)
+  - [Task List](#task-list)
+  - [Task 1 — Project scaffold and config](#task-1--project-scaffold-and-config)
+  - [Task 2 — src/utils.py](#task-2--srcutilspy)
+  - [Task 3 — src/data\_loader.py](#task-3--srcdata_loaderpy)
+  - [Task 4 — src/data\_inspector.py — format detection and raw profiling](#task-4--srcdata_inspectorpy--format-detection-and-raw-profiling)
+  - [Task 5 — src/data\_inspector.py — category profile and validation](#task-5--srcdata_inspectorpy--category-profile-and-validation)
+  - [Task 6 — src/data\_normalizer.py — helpers and load\_raw\_records](#task-6--srcdata_normalizerpy--helpers-and-load_raw_records)
+  - [Task 7 — src/data\_normalizer.py — normalise\_articles](#task-7--srcdata_normalizerpy--normalise_articles)
+  - [Task 8 — src/preprocessing.py](#task-8--srcpreprocessingpy)
+  - [Task 9 — src/ner.py — chunking and pipeline](#task-9--srcnerpy--chunking-and-pipeline)
+  - [Task 10 — src/ner.py — run\_ner and analysis functions](#task-10--srcnerpy--run_ner-and-analysis-functions)
+  - [Task 11 — src/summarizer.py](#task-11--srcsummarizerpy)
+  - [Task 12 — src/similarity.py](#task-12--srcsimilaritypy)
+  - [Task 13 — src/topic\_predictor.py](#task-13--srctopic_predictorpy)
+  - [Task 14 — tests/conftest.py and test\_data\_loader.py](#task-14--testsconftestpy-and-test_data_loaderpy)
+  - [Task 15 — tests/test\_data\_inspector.py](#task-15--teststest_data_inspectorpy)
+  - [Task 16 — tests/test\_data\_normalizer.py](#task-16--teststest_data_normalizerpy)
+  - [Task 17 — tests/test\_preprocessing.py](#task-17--teststest_preprocessingpy)
+  - [Task 18 — tests/test\_ner.py](#task-18--teststest_nerpy)
+  - [Task 19 — tests/test\_summarizer.py](#task-19--teststest_summarizerpy)
+  - [Task 20 — tests/test\_similarity.py and test\_topic\_predictor.py](#task-20--teststest_similaritypy-and-test_topic_predictorpy)
+  - [Task 21 — scripts/review\_spec.py](#task-21--scriptsreview_specpy)
+  - [Task 22 — notebooks/analysis.ipynb](#task-22--notebooksanalysisipynb)
+  - [Final verification](#final-verification)
 
 ---
 
@@ -426,7 +430,11 @@ Read docs/SPEC_v3.md section "src/data_normalizer.py" for the full specification
 
 Implement:
 
-1. Imports: hashlib, logging, random, dataclasses.dataclass, pathlib.Path, typing.Optional
+1. Imports: hashlib, logging, random, dataclasses.dataclass, pathlib.Path, typing.Optional.
+   Also add a module-level import: `from src.data_inspector import load_raw_records`
+   (the spec's import block at line 855 of SPEC_v3.md omits this, but the test
+   harness patches `src.data_normalizer.load_raw_records` — see Task 16 — so the
+   name must exist on the data_normalizer module).
 
 2. Module-level logger: logger = logging.getLogger(__name__)
 
@@ -499,7 +507,7 @@ Processing order (follow exactly):
 2. Create ONE stateful RNG: rng = random.Random(random_seed)
    Do NOT create another random.Random inside the function.
 
-3. Load records via load_raw_records (import from src.data_inspector).
+3. Load records via load_raw_records (already imported at module level per Task 6).
 
 4. For each record (track original index for DroppedRecord):
    a. Apply FIELD_MAPPINGS in insertion order — iterate FIELD_MAPPINGS keys, check if
@@ -531,7 +539,11 @@ Processing order (follow exactly):
    - id: if has_source_id, keep existing value. If not, generate via _generate_stable_id(text).
    - event_id: if pageid was present, store str(raw_value).
 
-8. Normalise topic and country: store lowercased stripped strings.
+8. Normalise topic and country: store lowercased stripped strings (_normalise_topic_string).
+   Note: for the Wikinews path, _select_from_categories already returns the value lowercased
+   and stripped, so this step is idempotent there. For non-Wikinews sources with a string
+   topic/category or country field, this is the step that performs the normalisation
+   before storing into the article dict.
 
 Return (valid_articles, dropped_records).
 
@@ -598,7 +610,7 @@ Implement:
    - Read spaCy model names from config["models"]["spacy_english"] and config["models"]["spacy_german"].
    - Returns same list (mutated in-place).
 
-Acceptance criterion: run `uv run python -c "from src.preprocessing import clean_text; print(clean_text('[[Berlin|Berlin, Germany]] {{cite}} text'))"` — should output "Berlin, Germany  text" (or similar with templates removed).
+Acceptance criterion: run `uv run python -c "from src.preprocessing import clean_text; print(clean_text('[[Berlin|Berlin, Germany]] {{cite}} text'))"` — should output "Berlin, Germany text" (single space — step e collapses runs of whitespace and step f strips).
 ```
 
 ---
@@ -641,9 +653,13 @@ Implement:
      - If whitespace found: end = whitespace position. Chunk = text[start:end].
      - If no whitespace: end = start + chunk_size. Hard-break. Log warning.
      - Append (text[start:end], start).
-     - Next start = end - overlap. Search backwards from there within the bounded window
-       (no further back than end - chunk_size) for whitespace. If found, adjust start.
-       If not found, use (end - overlap) as-is.
+     - Compute next_start = end - overlap. Search backwards from there within the bounded
+       window (no further back than end - chunk_size) for whitespace. If found, adjust
+       next_start to that position. If not found, use (end - overlap) as-is.
+     - Progress guard: if next_start <= start, set next_start = start + 1
+       (defensive — guarantees forward progress when the whitespace search lands at or
+       before the current start, e.g. on degenerate inputs where overlap is near chunk_size).
+     - start = next_start.
    - Returns list of (chunk_str, start_offset) tuples.
 
 6. Function _resolve_overlapping_entities(entities: list[dict], cleaned_text: str) -> list[dict]
@@ -704,6 +720,7 @@ Implement:
 
 4. Function plot_entity_dynamics(df, entity_names, language, country=None) -> None
    - Filter to language and optional country.
+   - Filter rows to df["entity_text"].isin(entity_names) — only the named entities are plotted.
    - Parse date with pd.to_datetime(errors="coerce"). Drop NaT rows.
    - Create year_month = parsed_dates.dt.to_period("M").
    - Group by (entity_text, year_month). Count unique article_id per group.
@@ -1023,8 +1040,16 @@ Create tests/test_data_normalizer.py.
 Read docs/SPEC_v3.md section "Expected test behaviours — test_data_normalizer.py".
 
 Use the sample_raw_record fixture from conftest.py where appropriate.
-Mock load_raw_records (imported inside data_normalizer as from src.data_inspector import load_raw_records)
-to return controlled input without file I/O.
+
+Mock load_raw_records to return controlled input without file I/O.
+Patch target: `src.data_normalizer.load_raw_records`. This requires the import to be
+module-level inside data_normalizer.py (`from src.data_inspector import load_raw_records`
+at the top of the file), so that the local name `load_raw_records` exists on the
+data_normalizer module and `monkeypatch.setattr` / `mocker.patch` can replace it.
+Task 6's import list must include this line — adjust if it was omitted.
+(If you instead import inside the function, the local name does not exist on the module
+and patching at src.data_normalizer.load_raw_records will silently miss; you would
+have to patch src.data_inspector.load_raw_records BEFORE the function runs.)
 
 Implement these tests:
 
@@ -1253,8 +1278,13 @@ Patch: src.topic_predictor.hf_pipeline
 --- tests/test_topic_predictor.py ---
 
 1. test_predict_all_topics_reproducible:
-   10 articles with cleaned_text. Call predict_all_topics twice with random_seed=42.
+   10 articles with cleaned_text. Pass a MagicMock as topic_pipeline (set
+   `mock_pipeline.return_value = {"labels": ["Sports"], "scores": [0.9]}`) — do NOT
+   call load_topic_pipeline, which would download the BART-MNLI model.
+   Call predict_all_topics twice with random_seed=42, passing the same mock.
    Assert same article ids selected both times.
+   Note: patching `src.topic_predictor.hf_pipeline` is not sufficient here because
+   predict_all_topics receives the pipeline as a parameter — pass the mock directly.
 
 2. test_evaluate_topic_predictions_all_correct:
    sampled_articles where article["topic"]=="sports" and predicted_topic=="Sports".
@@ -1284,11 +1314,17 @@ All tests must pass.
 Implement scripts/review_spec.py using the Anthropic SDK with extended thinking.
 
 Read docs/SPEC_v3.md section "Using LLMs to review your own work — Job 2" for context.
-Read docs/ai-engineering-field-guide.md for the reference implementation.
+(docs/ai-engineering-field-guide.md does not exist in this repo — ignore the previous
+reference to it; the spec text is self-contained.)
 
 The script:
 
-1. Reads ANTHROPIC_API_KEY from environment variable. If missing:
+1. Load .env into the process environment at import/script start:
+   `from dotenv import load_dotenv; load_dotenv()`.
+   This is required because the error message instructs users to copy .env.example to .env,
+   but `anthropic.Anthropic()` only reads from os.environ — without load_dotenv() a .env
+   file is invisible to the SDK. python-dotenv is already in dependencies (Task 1).
+   Then read ANTHROPIC_API_KEY from environment variable. If missing:
    raise EnvironmentError(
        "ANTHROPIC_API_KEY environment variable is not set. "
        "Copy .env.example to .env and add your key."
@@ -1305,7 +1341,7 @@ The script:
    - Reads the spec file with encoding="utf-8"
    - Creates anthropic.Anthropic() client (no key arg — reads from env automatically)
    - Calls client.messages.create with:
-     model="claude-opus-4-6"
+     model="claude-opus-4-7"
      max_tokens=16000
      thinking={"type": "enabled", "budget_tokens": 10000}
      system=REVIEWER_PROMPT

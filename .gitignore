@@ -1,13 +1,7 @@
-# Python-generated files
+data/
+logs/
+.env
 __pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
-
-# Virtual environments
-.venv
-
-# folders
-private/
+*.pyc
+.ipynb_checkpoints/
+.venv/
