@@ -1,5 +1,5 @@
-# Phase 5 — Code Implementation Guide
-### Wikinews NLP Analysis Pipeline — SPEC_v3.md
+# Phase 5 - Code Implementation Guide
+### Wikinews NLP Analysis Pipeline - SPEC_v3.md
 
 Copy each prompt into a new Claude Code session. Complete each task fully and run the tests before moving to the next.
 
@@ -7,39 +7,39 @@ Copy each prompt into a new Claude Code session. Complete each task fully and ru
 
 ## Task List
 
-- [Phase 5 — Code Implementation Guide](#phase-5--code-implementation-guide)
-    - [Wikinews NLP Analysis Pipeline — SPEC\_v3.md](#wikinews-nlp-analysis-pipeline--spec_v3md)
+- [Phase 5 - Code Implementation Guide](#phase-5--code-implementation-guide)
+    - [Wikinews NLP Analysis Pipeline - SPEC\_v3.md](#wikinews-nlp-analysis-pipeline--spec_v3md)
   - [Task List](#task-list)
-  - [Task 1 — Project scaffold and config](#task-1--project-scaffold-and-config)
-  - [Task 2 — src/utils.py](#task-2--srcutilspy)
-  - [Task 3 — src/data\_loader.py](#task-3--srcdata_loaderpy)
-  - [Task 4 — src/data\_inspector.py — format detection and raw profiling](#task-4--srcdata_inspectorpy--format-detection-and-raw-profiling)
-  - [Task 5 — src/data\_inspector.py — category profile and validation](#task-5--srcdata_inspectorpy--category-profile-and-validation)
-  - [Task 6 — src/data\_normalizer.py — helpers and load\_raw\_records](#task-6--srcdata_normalizerpy--helpers-and-load_raw_records)
-  - [Task 7 — src/data\_normalizer.py — normalise\_articles](#task-7--srcdata_normalizerpy--normalise_articles)
-  - [Task 8 — src/preprocessing.py](#task-8--srcpreprocessingpy)
-  - [Task 9 — src/ner.py — chunking and pipeline](#task-9--srcnerpy--chunking-and-pipeline)
-  - [Task 10 — src/ner.py — run\_ner and analysis functions](#task-10--srcnerpy--run_ner-and-analysis-functions)
-  - [Task 11 — src/summarizer.py](#task-11--srcsummarizerpy)
-  - [Task 12 — src/similarity.py](#task-12--srcsimilaritypy)
-  - [Task 13 — src/topic\_predictor.py](#task-13--srctopic_predictorpy)
-  - [Task 14 — tests/conftest.py and test\_data\_loader.py](#task-14--testsconftestpy-and-test_data_loaderpy)
-  - [Task 15 — tests/test\_data\_inspector.py](#task-15--teststest_data_inspectorpy)
-  - [Task 16 — tests/test\_data\_normalizer.py](#task-16--teststest_data_normalizerpy)
-  - [Task 17 — tests/test\_preprocessing.py](#task-17--teststest_preprocessingpy)
-  - [Task 18 — tests/test\_ner.py](#task-18--teststest_nerpy)
-  - [Task 19 — tests/test\_summarizer.py](#task-19--teststest_summarizerpy)
-  - [Task 20 — tests/test\_similarity.py and test\_topic\_predictor.py](#task-20--teststest_similaritypy-and-test_topic_predictorpy)
-  - [Task 21 — scripts/review\_spec.py](#task-21--scriptsreview_specpy)
-  - [Task 22 — notebooks/analysis.ipynb](#task-22--notebooksanalysisipynb)
+  - [Task 1 - Project scaffold and config](#task-1--project-scaffold-and-config)
+  - [Task 2 - src/utils.py](#task-2--srcutilspy)
+  - [Task 3 - src/data\_loader.py](#task-3--srcdata_loaderpy)
+  - [Task 4 - src/data\_inspector.py - format detection and raw profiling](#task-4--srcdata_inspectorpy--format-detection-and-raw-profiling)
+  - [Task 5 - src/data\_inspector.py - category profile and validation](#task-5--srcdata_inspectorpy--category-profile-and-validation)
+  - [Task 6 - src/data\_normalizer.py - helpers and load\_raw\_records](#task-6--srcdata_normalizerpy--helpers-and-load_raw_records)
+  - [Task 7 - src/data\_normalizer.py - normalise\_articles](#task-7--srcdata_normalizerpy--normalise_articles)
+  - [Task 8 - src/preprocessing.py](#task-8--srcpreprocessingpy)
+  - [Task 9 - src/ner.py - chunking and pipeline](#task-9--srcnerpy--chunking-and-pipeline)
+  - [Task 10 - src/ner.py - run\_ner and analysis functions](#task-10--srcnerpy--run_ner-and-analysis-functions)
+  - [Task 11 - src/summarizer.py](#task-11--srcsummarizerpy)
+  - [Task 12 - src/similarity.py](#task-12--srcsimilaritypy)
+  - [Task 13 - src/topic\_predictor.py](#task-13--srctopic_predictorpy)
+  - [Task 14 - tests/conftest.py and test\_data\_loader.py](#task-14--testsconftestpy-and-test_data_loaderpy)
+  - [Task 15 - tests/test\_data\_inspector.py](#task-15--teststest_data_inspectorpy)
+  - [Task 16 - tests/test\_data\_normalizer.py](#task-16--teststest_data_normalizerpy)
+  - [Task 17 - tests/test\_preprocessing.py](#task-17--teststest_preprocessingpy)
+  - [Task 18 - tests/test\_ner.py](#task-18--teststest_nerpy)
+  - [Task 19 - tests/test\_summarizer.py](#task-19--teststest_summarizerpy)
+  - [Task 20 - tests/test\_similarity.py and test\_topic\_predictor.py](#task-20--teststest_similaritypy-and-test_topic_predictorpy)
+  - [Task 21 - scripts/review\_spec.py](#task-21--scriptsreview_specpy)
+  - [Task 22 - notebooks/analysis.ipynb](#task-22--notebooksanalysisipynb)
   - [Final verification](#final-verification)
 
 ---
 
-## Task 1 — Project scaffold and config
+## Task 1 - Project scaffold and config
 
 ```
-Create the full directory and file scaffold for the Wikinews NLP project, then write config/config.yaml and the project root files. This project uses `uv` for dependency management — NOT pip + requirements.txt.
+Create the full directory and file scaffold for the Wikinews NLP project, then write config/config.yaml and the project root files. This project uses `uv` for dependency management - NOT pip + requirements.txt.
 
 Project root: use the current working directory.
 
@@ -196,7 +196,7 @@ Also create empty placeholder files (just a module-level docstring is fine) for:
   src/similarity.py
   src/topic_predictor.py
 
-Do not implement any logic yet — just stubs so imports resolve.
+Do not implement any logic yet - just stubs so imports resolve.
 
 Dependency installation: after creating pyproject.toml, run:
   uv sync
@@ -213,7 +213,7 @@ Acceptance criterion: all directories and files exist, `uv sync` completes succe
 
 ---
 
-## Task 2 — src/utils.py
+## Task 2 - src/utils.py
 
 ```
 Implement src/utils.py exactly as specified below.
@@ -245,7 +245,7 @@ The file must contain:
    - Calls gc.collect()
    - If torch.cuda.is_available(): calls torch.cuda.empty_cache()
    - Logs: logger.info("GPU cache cleared.")
-   - DOES NOT take a model as an argument — the caller must del their own reference first
+   - DOES NOT take a model as an argument - the caller must del their own reference first
 
 No other functions or classes.
 
@@ -254,7 +254,7 @@ Acceptance criterion: `uv run python -c "from src.utils import setup_logging, ge
 
 ---
 
-## Task 3 — src/data_loader.py
+## Task 3 - src/data_loader.py
 
 ```
 Implement src/data_loader.py with the single public function download_dataset.
@@ -298,12 +298,12 @@ All paths use pathlib.Path. All file opens use encoding="utf-8" where applicable
 
 Acceptance criterion: the function exists, is importable, and the skip-condition branch
 works correctly (test by creating a temp dir with a dummy .jsonl file > 100KB and calling
-the function — it should return immediately without network access).
+the function - it should return immediately without network access).
 ```
 
 ---
 
-## Task 4 — src/data_inspector.py — format detection and raw profiling
+## Task 4 - src/data_inspector.py - format detection and raw profiling
 
 ```
 Implement the first half of src/data_inspector.py: the dataclasses, detect_format, raw_profile,
@@ -350,7 +350,7 @@ Implement these in order:
    - For CSV/TSV: csv.DictReader. All values are strings.
    - For directory-of-txt: each .txt file → {"text": contents, "id": stem, "language": None,
      "topic": None, "date": None}. Read with encoding="utf-8", errors="replace". Sort by stem.
-   - For JSON/JSONL/CSV: read files with encoding="utf-8" (no error replacement — let
+   - For JSON/JSONL/CSV: read files with encoding="utf-8" (no error replacement - let
      UnicodeDecodeError propagate).
    - If directory for JSON/JSONL/CSV: read only direct-child files with dominant extension,
      sorted by filename. Log warning for recognised data files with non-dominant extensions.
@@ -367,14 +367,14 @@ Implement these in order:
    - Logs via logger.info(): format, file count, total size, record count, field names,
      sample record keys. Truncates text fields in sample to 100 chars. Never prints full text.
 
-Do NOT implement category_profile or validate_normalised yet — those are Task 5.
+Do NOT implement category_profile or validate_normalised yet - those are Task 5.
 
 Acceptance criterion: `uv run python -c "from src.data_inspector import detect_format, raw_profile, load_raw_records; print('ok')"` exits without error.
 ```
 
 ---
 
-## Task 5 — src/data_inspector.py — category profile and validation
+## Task 5 - src/data_inspector.py - category profile and validation
 
 ```
 Add the remaining functions to src/data_inspector.py. Do NOT rewrite existing functions.
@@ -412,7 +412,7 @@ Implement these three functions:
 
 4. print_validation_report(report: NormalisedValidation) -> None
    - Logs normal fields with logger.info(), warnings with logger.warning(), errors with logger.error().
-   - Ends with "Validation passed." or "Validation FAILED — review errors above."
+   - Ends with "Validation passed." or "Validation FAILED - review errors above."
    - No ANSI colour codes.
 
 Acceptance criterion: `uv run python -c "from src.data_inspector import category_profile, validate_normalised; print('ok')"` exits without error.
@@ -420,11 +420,11 @@ Acceptance criterion: `uv run python -c "from src.data_inspector import category
 
 ---
 
-## Task 6 — src/data_normalizer.py — helpers and load_raw_records
+## Task 6 - src/data_normalizer.py - helpers and load_raw_records
 
 ```
-Implement src/data_normalizer.py — the helper functions, constants, and DroppedRecord dataclass.
-Do NOT implement normalise_articles yet — that is Task 7.
+Implement src/data_normalizer.py - the helper functions, constants, and DroppedRecord dataclass.
+Do NOT implement normalise_articles yet - that is Task 7.
 
 Read docs/SPEC_v3.md section "src/data_normalizer.py" for the full specification.
 
@@ -433,12 +433,12 @@ Implement:
 1. Imports: hashlib, logging, random, dataclasses.dataclass, pathlib.Path, typing.Optional.
    Also add a module-level import: `from src.data_inspector import load_raw_records`
    (the spec's import block at line 855 of SPEC_v3.md omits this, but the test
-   harness patches `src.data_normalizer.load_raw_records` — see Task 16 — so the
+   harness patches `src.data_normalizer.load_raw_records` - see Task 16 - so the
    name must exist on the data_normalizer module).
 
 2. Module-level logger: logger = logging.getLogger(__name__)
 
-3. FIELD_MAPPINGS dict — copy exactly from SPEC. The exact key order matters:
+3. FIELD_MAPPINGS dict - copy exactly from SPEC. The exact key order matters:
    the first matching key wins per internal field. Do NOT reorder.
    Key mapping includes "pageid" → "event_id" and excludes "url".
 
@@ -480,13 +480,13 @@ Acceptance criterion: `uv run python -c "from src.data_normalizer import FIELD_M
 
 ---
 
-## Task 7 — src/data_normalizer.py — normalise_articles
+## Task 7 - src/data_normalizer.py - normalise_articles
 
 ```
 Add normalise_articles to src/data_normalizer.py. Do NOT rewrite existing functions.
 
 Read docs/SPEC_v3.md section "src/data_normalizer.py" for the full specification.
-Pay special attention to the RNG rules and processing order — these are critical for correctness.
+Pay special attention to the RNG rules and processing order - these are critical for correctness.
 
 Function signature:
 def normalise_articles(
@@ -510,7 +510,7 @@ Processing order (follow exactly):
 3. Load records via load_raw_records (already imported at module level per Task 6).
 
 4. For each record (track original index for DroppedRecord):
-   a. Apply FIELD_MAPPINGS in insertion order — iterate FIELD_MAPPINGS keys, check if
+   a. Apply FIELD_MAPPINGS in insertion order - iterate FIELD_MAPPINGS keys, check if
       each key exists in the raw record. First matching key per internal field wins.
       Track has_source_id: True if any of "id", "article_id", "uid" was present.
    b. For the "text" slot: if no FIELD_MAPPINGS key matched, try _infer_text_field().
@@ -526,7 +526,7 @@ Processing order (follow exactly):
       Same pattern as topic.
 
 5. Deduplicate by text hash: _generate_stable_id(article["text"]). First occurrence wins.
-   Drop with reason "duplicate". Build in O(n) — no sorting.
+   Drop with reason "duplicate". Build in O(n) - no sorting.
 
 6. For each (country, language, topic) group, if count > max_per_topic:
    - Sort by str(source_id_value) if source id exists, else by position in post-dedup list.
@@ -556,7 +556,7 @@ Acceptance criterion: make these tests pass:
 
 ---
 
-## Task 8 — src/preprocessing.py
+## Task 8 - src/preprocessing.py
 
 ```
 Implement src/preprocessing.py exactly as specified.
@@ -593,9 +593,9 @@ Implement:
    - Calls _get_spacy_model(language, model_name) to get the cached model.
    - Runs the spaCy model on text.
    - Returns dict with:
-     "sentences": list[str]  — sentence strings from spaCy senter
-     "tokens": list[str]     — non-whitespace token strings (token.is_space == False)
-     "pos_tags": list[tuple[str,str]]  — [(token.text, token.pos_) for non-space tokens]
+     "sentences": list[str]  - sentence strings from spaCy senter
+     "tokens": list[str]     - non-whitespace token strings (token.is_space == False)
+     "pos_tags": list[tuple[str,str]]  - [(token.text, token.pos_) for non-space tokens]
    - POS tags use Universal POS tagset (token.pos_, NOT token.tag_).
 
 6. Function preprocess_articles(articles: list[dict], config: dict) -> list[dict]
@@ -610,16 +610,16 @@ Implement:
    - Read spaCy model names from config["models"]["spacy_english"] and config["models"]["spacy_german"].
    - Returns same list (mutated in-place).
 
-Acceptance criterion: run `uv run python -c "from src.preprocessing import clean_text; print(clean_text('[[Berlin|Berlin, Germany]] {{cite}} text'))"` — should output "Berlin, Germany text" (single space — step e collapses runs of whitespace and step f strips).
+Acceptance criterion: run `uv run python -c "from src.preprocessing import clean_text; print(clean_text('[[Berlin|Berlin, Germany]] {{cite}} text'))"` - should output "Berlin, Germany text" (single space - step e collapses runs of whitespace and step f strips).
 ```
 
 ---
 
-## Task 9 — src/ner.py — chunking and pipeline
+## Task 9 - src/ner.py - chunking and pipeline
 
 ```
 Implement the first half of src/ner.py: the config validator, pipeline loader, and chunking logic.
-Do NOT implement run_ner or analysis functions yet — those are Task 10.
+Do NOT implement run_ner or analysis functions yet - those are Task 10.
 
 Read docs/SPEC_v3.md section "src/ner.py" for the full specification.
 
@@ -657,7 +657,7 @@ Implement:
        window (no further back than end - chunk_size) for whitespace. If found, adjust
        next_start to that position. If not found, use (end - overlap) as-is.
      - Progress guard: if next_start <= start, set next_start = start + 1
-       (defensive — guarantees forward progress when the whitespace search lands at or
+       (defensive - guarantees forward progress when the whitespace search lands at or
        before the current start, e.g. on degenerate inputs where overlap is near chunk_size).
      - start = next_start.
    - Returns list of (chunk_str, start_offset) tuples.
@@ -678,7 +678,7 @@ Run `uv run python -c "from src.ner import _chunk_text; chunks = _chunk_text('wo
 
 ---
 
-## Task 10 — src/ner.py — run_ner and analysis functions
+## Task 10 - src/ner.py - run_ner and analysis functions
 
 ```
 Add the remaining functions to src/ner.py. Do NOT rewrite existing functions.
@@ -693,7 +693,7 @@ Implement:
    - For articles where len(cleaned_text) <= chunk_size: run pipeline directly on cleaned_text.
    - For longer articles: chunk with _chunk_text, run pipeline on each chunk, adjust start/end
      offsets by chunk's start_offset, then call _resolve_overlapping_entities.
-   - KEY RENAME (mandatory): HuggingFace returns "entity_group" — rename to "label".
+   - KEY RENAME (mandatory): HuggingFace returns "entity_group" - rename to "label".
      Also keep: "text" (from "word"), "start", "end", "score".
      Entity dict: {"text": ..., "label": ..., "start": ..., "end": ..., "score": ...}
    - Set entities=[] (not None) if NER ran but found nothing, or cleaned_text empty.
@@ -704,7 +704,7 @@ Implement:
 2. Function build_entity_dataframe(articles: list[dict]) -> pd.DataFrame
    - Flatten all entities from articles that have the "entities" key and entities is not None.
    - Skip articles where "entities" key is absent or entities is None.
-   - Include articles where entities == [] (they produce 0 rows — do not add a guard that skips them).
+   - Include articles where entities == [] (they produce 0 rows - do not add a guard that skips them).
    - Title handling: if article["title"] == "", use f"[id: {article['id']}]"
    - Columns: article_id, event_id, title, date, language, country, topic,
               entity_text, entity_label, score
@@ -715,12 +715,12 @@ Implement:
    - Count distinct article_id per entity_text (not total rows).
    - Group by entity_text only (merge different labels for same surface string).
    - Plot horizontal bar chart of top_n.
-   - Title: f"Top {top_n} entities — {country} — {language.upper()}" or without country.
+   - Title: f"Top {top_n} entities - {country} - {language.upper()}" or without country.
    - Use matplotlib. Do NOT call plt.show().
 
 4. Function plot_entity_dynamics(df, entity_names, language, country=None) -> None
    - Filter to language and optional country.
-   - Filter rows to df["entity_text"].isin(entity_names) — only the named entities are plotted.
+   - Filter rows to df["entity_text"].isin(entity_names) - only the named entities are plotted.
    - Parse date with pd.to_datetime(errors="coerce"). Drop NaT rows.
    - Create year_month = parsed_dates.dt.to_period("M").
    - Group by (entity_text, year_month). Count unique article_id per group.
@@ -731,7 +731,7 @@ Implement:
 5. Function investigate_ner_errors(articles, language, error_score_threshold, country=None) -> pd.DataFrame
    - Collect entities where score < error_score_threshold.
    - Filter to language and optional country.
-   - MISC label is NOT treated as an error — only confidence matters.
+   - MISC label is NOT treated as an error - only confidence matters.
    - Columns: article_id, event_id, country, title, entity_text, entity_label, score.
    - Sort by score ascending.
 
@@ -740,7 +740,7 @@ Acceptance criterion: `uv run python -c "from src.ner import run_ner, build_enti
 
 ---
 
-## Task 11 — src/summarizer.py
+## Task 11 - src/summarizer.py
 
 ```
 Implement src/summarizer.py exactly as specified.
@@ -773,7 +773,7 @@ Implement:
 
 6. summarize_articles(articles: list[dict], summ_pipeline: object, config: dict) -> list[dict]
    - Qualifying articles: those where article["language"] is in config["languages"]["summarization"].
-   - Do NOT hardcode "en" — read from config.
+   - Do NOT hardcode "en" - read from config.
    - Count qualifying articles. Log progress every 5: logger.info("Summarised %d/%d articles", n_done, n_total)
    - For each qualifying article: call summarize_article with article["cleaned_text"] and config values.
    - Store result in article["summary"] (may be None).
@@ -786,7 +786,7 @@ Implement:
      article_id, title (use id if title==""), country, topic,
      summary_char_count, summary_sentence_count (split on [.!?]),
      avg_sentence_chars, missing_terminal_punctuation (bool),
-     repeated_whitespace (bool), very_long_sentence (bool — any sentence > 250 chars),
+     repeated_whitespace (bool), very_long_sentence (bool - any sentence > 250 chars),
      issue_count (sum of boolean flags)
    - Return empty DataFrame with correct columns if no summaries.
 
@@ -796,7 +796,7 @@ Acceptance criterion: run tests from task 19 after implementation.
 
 ---
 
-## Task 12 — src/similarity.py
+## Task 12 - src/similarity.py
 
 ```
 Implement src/similarity.py exactly as specified.
@@ -817,12 +817,12 @@ Implement:
 4. calculate_similarity(original: str, summary: str, model: SentenceTransformer) -> float
    - Encode both strings with model.encode().
    - Compute cosine similarity with util.cos_sim().
-   - cos_sim() returns shape (1,1) — extract with float(result[0][0]).
+   - cos_sim() returns shape (1,1) - extract with float(result[0][0]).
    - Return Python float. Do NOT assume a lower bound of 0.
 
 5. score_all_articles(articles: list[dict], model: SentenceTransformer) -> list[dict]
    - Qualifying: article.get("cleaned_text") is not None and != "" AND article.get("summary") is not None.
-   - Use .get() for both — non-English articles have no "summary" key.
+   - Use .get() for both - non-English articles have no "summary" key.
    - Skip non-qualifying articles without logging.
    - Per-article errors: catch, log, leave "similarity_score" unset.
    - Returns same list with "similarity_score" added where applicable.
@@ -838,7 +838,7 @@ Implement:
    - y-axis: independent per subplot (NOT sharey). Label: "Article count".
    - 20 bins across [-1.0, 1.0].
    - Vertical dashed line at threshold on every subplot.
-   - Subplot title: f"{country} — {topic} (n={article_count})".
+   - Subplot title: f"{country} - {topic} (n={article_count})".
    - Overall title: "Similarity score distribution by country and topic".
    - Do NOT call plt.show().
 
@@ -853,7 +853,7 @@ Acceptance criterion: `uv run python -c "from src.similarity import calculate_si
 
 ---
 
-## Task 13 — src/topic_predictor.py
+## Task 13 - src/topic_predictor.py
 
 ```
 Implement src/topic_predictor.py exactly as specified.
@@ -928,27 +928,27 @@ Acceptance criterion: `uv run python -c "from src.topic_predictor import predict
 
 ---
 
-## Task 14 — tests/conftest.py and test_data_loader.py
+## Task 14 - tests/conftest.py and test_data_loader.py
 
 ```
 Create tests/conftest.py and tests/test_data_loader.py.
 
-Read docs/SPEC_v3.md section "conftest.py — shared fixtures" and
-"Expected test behaviours — test_data_loader.py" for the full specification.
+Read docs/SPEC_v3.md section "conftest.py - shared fixtures" and
+"Expected test behaviours - test_data_loader.py" for the full specification.
 
 --- tests/conftest.py ---
 Implement exactly as specified in SPEC. The file must contain:
 
-1. sample_en_article fixture — minimal valid English article with all post-normalisation fields.
-2. sample_de_article fixture — minimal valid German article.
-3. sample_raw_record fixture — raw record with non-standard field names (article_body, headline, etc.)
-4. mock_ner_pipeline fixture — MagicMock callable returning raw HuggingFace NER format
+1. sample_en_article fixture - minimal valid English article with all post-normalisation fields.
+2. sample_de_article fixture - minimal valid German article.
+3. sample_raw_record fixture - raw record with non-standard field names (article_body, headline, etc.)
+4. mock_ner_pipeline fixture - MagicMock callable returning raw HuggingFace NER format
    with "entity_group" (NOT "label") and "word" (NOT "text") keys.
    pipeline.return_value = [{"word": "Berlin", "entity_group": "LOC", "score": 0.98, "start": 5, "end": 11}]
-5. mock_summ_pipeline fixture — MagicMock with .tokenizer.encode.return_value = list(range(100))
+5. mock_summ_pipeline fixture - MagicMock with .tokenizer.encode.return_value = list(range(100))
    and .return_value = [{"summary_text": "A short summary of the article."}]
-6. mock_embedding_model fixture — MagicMock with .encode.return_value = torch.tensor([[0.5, 0.5, 0.5]])
-   Shape MUST be (1, 3) not (3,) — cos_sim requires 2D input.
+6. mock_embedding_model fixture - MagicMock with .encode.return_value = torch.tensor([[0.5, 0.5, 0.5]])
+   Shape MUST be (1, 3) not (3,) - cos_sim requires 2D input.
 7. mock_device autouse fixture that monkeypatches:
    src.ner.get_device → lambda: -1
    src.summarizer.get_device → lambda: -1
@@ -978,12 +978,12 @@ All 3 tests must pass.
 
 ---
 
-## Task 15 — tests/test_data_inspector.py
+## Task 15 - tests/test_data_inspector.py
 
 ```
 Create tests/test_data_inspector.py.
 
-Read docs/SPEC_v3.md section "Expected test behaviours — test_data_inspector.py".
+Read docs/SPEC_v3.md section "Expected test behaviours - test_data_inspector.py".
 
 Implement these tests (use tmp_path fixture for temp directories):
 
@@ -1032,12 +1032,12 @@ All tests must pass.
 
 ---
 
-## Task 16 — tests/test_data_normalizer.py
+## Task 16 - tests/test_data_normalizer.py
 
 ```
 Create tests/test_data_normalizer.py.
 
-Read docs/SPEC_v3.md section "Expected test behaviours — test_data_normalizer.py".
+Read docs/SPEC_v3.md section "Expected test behaviours - test_data_normalizer.py".
 
 Use the sample_raw_record fixture from conftest.py where appropriate.
 
@@ -1046,7 +1046,7 @@ Patch target: `src.data_normalizer.load_raw_records`. This requires the import t
 module-level inside data_normalizer.py (`from src.data_inspector import load_raw_records`
 at the top of the file), so that the local name `load_raw_records` exists on the
 data_normalizer module and `monkeypatch.setattr` / `mocker.patch` can replace it.
-Task 6's import list must include this line — adjust if it was omitted.
+Task 6's import list must include this line - adjust if it was omitted.
 (If you instead import inside the function, the local name does not exist on the module
 and patching at src.data_normalizer.load_raw_records will silently miss; you would
 have to patch src.data_inspector.load_raw_records BEFORE the function runs.)
@@ -1093,12 +1093,12 @@ All tests must pass.
 
 ---
 
-## Task 17 — tests/test_preprocessing.py
+## Task 17 - tests/test_preprocessing.py
 
 ```
 Create tests/test_preprocessing.py.
 
-Read docs/SPEC_v3.md section "Expected test behaviours — test_preprocessing.py".
+Read docs/SPEC_v3.md section "Expected test behaviours - test_preprocessing.py".
 
 Implement these tests:
 
@@ -1138,15 +1138,15 @@ All tests must pass.
 
 ---
 
-## Task 18 — tests/test_ner.py
+## Task 18 - tests/test_ner.py
 
 ```
 Create tests/test_ner.py.
 
-Read docs/SPEC_v3.md section "Expected test behaviours — test_ner.py" and
+Read docs/SPEC_v3.md section "Expected test behaviours - test_ner.py" and
 the conftest.py mock_ner_pipeline fixture specification.
 
-All tests must mock the HuggingFace pipeline — no model downloads.
+All tests must mock the HuggingFace pipeline - no model downloads.
 Patch: src.ner.hf_pipeline
 
 Implement these tests:
@@ -1187,12 +1187,12 @@ All tests must pass.
 
 ---
 
-## Task 19 — tests/test_summarizer.py
+## Task 19 - tests/test_summarizer.py
 
 ```
 Create tests/test_summarizer.py.
 
-Read docs/SPEC_v3.md section "Expected test behaviours — test_summarizer.py".
+Read docs/SPEC_v3.md section "Expected test behaviours - test_summarizer.py".
 Use mock_summ_pipeline fixture from conftest.py.
 Patch: src.summarizer.hf_pipeline
 
@@ -1245,13 +1245,13 @@ All tests must pass.
 
 ---
 
-## Task 20 — tests/test_similarity.py and test_topic_predictor.py
+## Task 20 - tests/test_similarity.py and test_topic_predictor.py
 
 ```
 Create tests/test_similarity.py and tests/test_topic_predictor.py.
 
-Read docs/SPEC_v3.md sections "Expected test behaviours — test_similarity.py" and
-"Expected test behaviours — test_topic_predictor.py".
+Read docs/SPEC_v3.md sections "Expected test behaviours - test_similarity.py" and
+"Expected test behaviours - test_topic_predictor.py".
 Use mock_embedding_model fixture from conftest.py.
 Patch: src.topic_predictor.hf_pipeline
 
@@ -1279,12 +1279,12 @@ Patch: src.topic_predictor.hf_pipeline
 
 1. test_predict_all_topics_reproducible:
    10 articles with cleaned_text. Pass a MagicMock as topic_pipeline (set
-   `mock_pipeline.return_value = {"labels": ["Sports"], "scores": [0.9]}`) — do NOT
+   `mock_pipeline.return_value = {"labels": ["Sports"], "scores": [0.9]}`) - do NOT
    call load_topic_pipeline, which would download the BART-MNLI model.
    Call predict_all_topics twice with random_seed=42, passing the same mock.
    Assert same article ids selected both times.
    Note: patching `src.topic_predictor.hf_pipeline` is not sufficient here because
-   predict_all_topics receives the pipeline as a parameter — pass the mock directly.
+   predict_all_topics receives the pipeline as a parameter - pass the mock directly.
 
 2. test_evaluate_topic_predictions_all_correct:
    sampled_articles where article["topic"]=="sports" and predicted_topic=="Sports".
@@ -1308,13 +1308,13 @@ All tests must pass.
 
 ---
 
-## Task 21 — scripts/review_spec.py
+## Task 21 - scripts/review_spec.py
 
 ```
 Implement scripts/review_spec.py using the Anthropic SDK with extended thinking.
 
-Read docs/SPEC_v3.md section "Using LLMs to review your own work — Job 2" for context.
-(docs/ai-engineering-field-guide.md does not exist in this repo — ignore the previous
+Read docs/SPEC_v3.md section "Using LLMs to review your own work - Job 2" for context.
+(docs/ai-engineering-field-guide.md does not exist in this repo - ignore the previous
 reference to it; the spec text is self-contained.)
 
 The script:
@@ -1322,7 +1322,7 @@ The script:
 1. Load .env into the process environment at import/script start:
    `from dotenv import load_dotenv; load_dotenv()`.
    This is required because the error message instructs users to copy .env.example to .env,
-   but `anthropic.Anthropic()` only reads from os.environ — without load_dotenv() a .env
+   but `anthropic.Anthropic()` only reads from os.environ - without load_dotenv() a .env
    file is invisible to the SDK. python-dotenv is already in dependencies (Task 1).
    Then read ANTHROPIC_API_KEY from environment variable. If missing:
    raise EnvironmentError(
@@ -1339,7 +1339,7 @@ The script:
 
 3. Function review_spec(spec_path: str) -> str
    - Reads the spec file with encoding="utf-8"
-   - Creates anthropic.Anthropic() client (no key arg — reads from env automatically)
+   - Creates anthropic.Anthropic() client (no key arg - reads from env automatically)
    - Calls client.messages.create with:
      model="claude-opus-4-7"
      max_tokens=16000
@@ -1355,23 +1355,23 @@ The script:
 
 Acceptance criterion: `uv run python -c "import sys; sys.path.insert(0, 'scripts'); from review_spec import review_spec; print('ok')"` exits without error (does not need to actually call the API).
 
-Note: the `anthropic` package is already in pyproject.toml dependencies — no separate install needed.
+Note: the `anthropic` package is already in pyproject.toml dependencies - no separate install needed.
 ```
 
 ---
 
-## Task 22 — notebooks/analysis.ipynb
+## Task 22 - notebooks/analysis.ipynb
 
 ```
 Create notebooks/analysis.ipynb with all 17 cells exactly as specified in SPEC_v3.md
 section "Notebook orchestration".
 
-Read docs/SPEC_v3.md section "Notebook orchestration" — it contains the exact code
+Read docs/SPEC_v3.md section "Notebook orchestration" - it contains the exact code
 for every cell.
 
 Rules:
-- Cell 1: Setup — config loading, logging, imports. Include the FileNotFoundError guard.
-- Cell 2: Validate config — validate_summarization_config and validate_ner_config.
+- Cell 1: Setup - config loading, logging, imports. Include the FileNotFoundError guard.
+- Cell 2: Validate config - validate_summarization_config and validate_ner_config.
 - Cell 3: Download data.
 - Cell 4: Raw profile (add a markdown comment HUMAN review gate).
 - Cell 5: Category profile (add markdown comment about config editing).
@@ -1379,17 +1379,17 @@ Rules:
 - Cell 7: Normalise summarisation pass (en only).
 - Cell 8: Validate both article sets. Include the hard guard that raises RuntimeError if validation fails.
 - Cell 9: Preprocessing both article sets.
-- Cell 10: NER English — load, run, del, release_model().
-- Cell 11: NER German — load, run, del, release_model().
-- Cell 12: NER analysis — entity_df, plot_top_entities for each country and language,
+- Cell 10: NER English - load, run, del, release_model().
+- Cell 11: NER German - load, run, del, release_model().
+- Cell 12: NER analysis - entity_df, plot_top_entities for each country and language,
   plot_entity_dynamics for top 5 English entities per country, investigate_ner_errors.
   Include the entity counting code exactly as in SPEC.
-- Cell 13: Summarisation — load, summarize_articles, del, release_model(), quality df display.
-- Cell 14: Similarity scoring — load, score_all_articles, del, release_model().
+- Cell 13: Summarisation - load, summarize_articles, del, release_model(), quality df display.
+- Cell 14: Similarity scoring - load, score_all_articles, del, release_model().
   Include the note about the 256-token limitation.
-- Cell 15: Similarity analysis — build_similarity_dataframe, plot, explain_similarity_extremes.
-- Cell 16: Topic prediction — load, predict_all_topics, del, release_model(), evaluate.
-- Cell 17: Empty markdown cell — placeholder for human-written summary findings.
+- Cell 15: Similarity analysis - build_similarity_dataframe, plot, explain_similarity_extremes.
+- Cell 16: Topic prediction - load, predict_all_topics, del, release_model(), evaluate.
+- Cell 17: Empty markdown cell - placeholder for human-written summary findings.
 
 Format: create a valid .ipynb JSON file. Each code cell has cell_type="code".
 Cell 17 is cell_type="markdown".

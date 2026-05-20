@@ -1,11 +1,11 @@
-# Code Implementation — Issues, Decisions, and Fixes
+# Code Implementation - Issues, Decisions, and Fixes
 
 Chronological log of every deviation from spec, judgment call on under-specified
 behaviour, bug found, and fix applied during the tasks in `docs/code_implementation.md`.
 
 ---
 
-## Task 3 — `src/data_loader.py`
+## Task 3 - `src/data_loader.py`
 
 ### 3.1 ZIP fallback also triggered when `git clone` itself fails
 
@@ -14,7 +14,7 @@ not say what to do when `git` *is* on PATH but `git clone` returns a non-zero ex
 code (e.g. transient network issue, auth prompt suppressed by `--non-interactive`,
 detached corporate proxy).
 
-**Decision.** Fall back to ZIP in *both* cases — missing git and failed clone — and
+**Decision.** Fall back to ZIP in *both* cases - missing git and failed clone - and
 only raise `EnvironmentError` when git is unavailable AND ZIP also fails. If git is
 available but clone failed and ZIP also fails, raise `RuntimeError` (the user has
 git; the network/repo is the problem).
@@ -80,7 +80,7 @@ retry. The two-attempt retry is reserved for `Timeout`/`ConnectionError` per spe
 
 ---
 
-## Task 4 — `src/data_inspector.py`
+## Task 4 - `src/data_inspector.py`
 
 ### 4.1 Bug fix: `_confirm_parse` failed for `directory-of-txt`
 
@@ -153,7 +153,7 @@ specific archive type.
 
 ---
 
-## Task 5 — `src/data_inspector.py` (category profile + validation)
+## Task 5 - `src/data_inspector.py` (category profile + validation)
 
 ### 5.1 `topics_missing_from_config` / `countries_missing_from_config` preserve config casing
 
@@ -172,7 +172,7 @@ in the missing-from-config lists so the user sees their own config values back
 **Issue.** Spec says "any (country, topic) below minimum" without saying whether
 to check only pairs that appear in articles or all selected × selected pairs. A
 pair that is entirely absent has count 0, which is below any reasonable minimum
-and *should* be flagged — but iterating `country_topic_counts` would miss it.
+and *should* be flagged - but iterating `country_topic_counts` would miss it.
 
 **Decision.** Iterate the cross-product of `selected_countries × selected_topics`
 (lowercased to match `country_topic_counts` keys) and flag any pair whose count
@@ -200,7 +200,7 @@ other validation failures or warnings.
 After whitespace-stripping, these produce no usable labels.
 
 **Decision.** Treat any record that yields zero usable labels (after strip and
-deduplication) as missing — i.e. increment `missing_categories_count`. This is
+deduplication) as missing - i.e. increment `missing_categories_count`. This is
 slightly stricter than spec but matches the field's user-facing meaning
 ("records with no usable categories" per the docstring of `print_category_profile`
 in the SPEC).
@@ -223,7 +223,7 @@ empty-DF branch.
 
 ---
 
-## Task 7 — `src/data_normalizer.py` (`normalise_articles`)
+## Task 7 - `src/data_normalizer.py` (`normalise_articles`)
 
 ### 7.1 Language values are lowercased before exact-match comparison
 
@@ -234,7 +234,7 @@ expected to match `"en"`, or be dropped as a regional/variant mismatch.
 **Decision.** Lowercase+strip the raw language value before comparing against
 the (lowercased) config list. This makes `lang="EN"` match `config: ["en"]`.
 Regional variants like `"en-US"` still fail (they don't equal `"en"` after
-lowercasing) — consistent with spec's "regional variants will not match" rule.
+lowercasing) - consistent with spec's "regional variants will not match" rule.
 
 **Files.** `src/data_normalizer.py` (`normalise_articles`)
 
@@ -247,7 +247,7 @@ dataset that includes both).
 
 **Decision.** If `categories` is a list, use `_select_from_categories` exclusively.
 If it returns `None`, drop the record with `topic_not_in_config` / `country_not_in_config`
-— do NOT fall back to the string field. Same applies to country resolution. Falling
+- do NOT fall back to the string field. Same applies to country resolution. Falling
 back would make precedence ambiguous between two sources of truth.
 
 **Files.** `src/data_normalizer.py` (`normalise_articles`)
@@ -268,19 +268,19 @@ keys within one sort would produce arbitrary ordering, so we pick a uniform key.
 
 ### 7.4 Non-string `title` coerced to `""`
 
-**Issue.** Schema specifies `"title": str — Empty string "" if not in source —
+**Issue.** Schema specifies `"title": str - Empty string "" if not in source -
 never None`. Doesn't cover the case where a FIELD_MAPPINGS-mapped raw title is
 present but is `None`, an integer, etc.
 
 **Decision.** If the mapped `title` value is not a `str`, store `""`. Same rule
-covers both "missing" and "wrong-type" — both yield empty string, never None.
+covers both "missing" and "wrong-type" - both yield empty string, never None.
 
 **Files.** `src/data_normalizer.py` (`normalise_articles`)
 
 ### 7.5 Non-string source `id` coerced to `str`
 
 **Issue.** Schema says `"id": str`. Spec says "if has_source_id, keep existing
-value" — but some sources store ids as integers (e.g. `article_id: 42`).
+value" - but some sources store ids as integers (e.g. `article_id: 42`).
 
 **Decision.** If `has_source_id` is True and the existing value is not a string,
 cast with `str()`. Preserves the source value while satisfying the schema type.
@@ -301,7 +301,7 @@ extractable fields, so a DroppedRecord with empty `field_values` would be noise.
 
 ---
 
-## Task 8 — `src/preprocessing.py`
+## Task 8 - `src/preprocessing.py`
 
 ### 8.1 Per-article error handling split across two stages
 
@@ -311,10 +311,10 @@ article is left in the list without preprocessing fields." Doesn't specify
 must happen.
 
 **Decision.** Two distinct error guards:
-1. **clean_text failures** — caught per-article; the article is removed from
+1. **clean_text failures** - caught per-article; the article is removed from
    the `nlp.pipe()` input batch and ends up without any preprocessing fields.
 2. **Field-extraction failures** (e.g. accessing `doc.sents` on a malformed
-   Doc) — caught per (article, doc) pair after `nlp.pipe()`, logged with
+   Doc) - caught per (article, doc) pair after `nlp.pipe()`, logged with
    article id.
 Both leave the article in the original list (mutation never started or was
 partial), matching the spec's "no preprocessing fields added on error" rule.
@@ -328,7 +328,7 @@ itself raises for the entire batch (e.g. OOM, model corruption).
 
 **Decision.** Wrap `list(nlp.pipe(...))` in `try/except Exception`, log via
 `logger.exception`, and skip the rest of that language group. The articles in
-that language remain in `articles` without preprocessing fields — same outcome
+that language remain in `articles` without preprocessing fields - same outcome
 as per-article failure, just at group granularity.
 
 **Files.** `src/preprocessing.py` (`preprocess_articles`)
@@ -361,7 +361,7 @@ the "best-effort, log-and-continue" tone the spec sets for per-article errors.
 
 ---
 
-## Task 9 — `src/ner.py` (chunking + pipeline)
+## Task 9 - `src/ner.py` (chunking + pipeline)
 
 ### 9.1 Chunk boundary convention: end is whitespace position (exclusive)
 
@@ -384,7 +384,7 @@ forward window), the spec doesn't say what `next_start` should be: should it
 still try to find whitespace in the overlap window?
 
 **Decision.** Skip the backward whitespace search entirely when the current
-chunk was a hard break — by definition there is no whitespace in the relevant
+chunk was a hard break - by definition there is no whitespace in the relevant
 character range, so the search would fail. Use `next_start = end - overlap`
 directly. The progress guard (`next_start = start + 1` if `next_start <= start`)
 still applies.
@@ -398,7 +398,7 @@ are not identical". Boundary-touching spans (e.g. `[0,5]` and `[5,10]`) share
 no characters but touch at a single index. Should they be treated as overlapping?
 
 **Decision.** Treat boundary-touching as non-overlapping. The overlap test is
-`ent["end"] > prev["start"] AND ent["start"] < prev["end"]` — strictly less
+`ent["end"] > prev["start"] AND ent["start"] < prev["end"]` - strictly less
 than, not less-or-equal. Two entities that abut but do not share characters
 are both kept. This matches the intuitive reading of "overlap" (shared chars).
 
@@ -418,7 +418,7 @@ never has to compare an entity against multiple copies of itself.
 
 ---
 
-## Task 10 — `src/ner.py` (run_ner + analysis)
+## Task 10 - `src/ner.py` (run_ner + analysis)
 
 ### 10.1 Plot functions early-return on empty filtered data
 
@@ -463,19 +463,19 @@ post-rename keys directly, those still work. This is defensive but spec-leaning
 Doesn't say whether to also skip plotting that entity's line.
 
 **Decision.** Log the warning but still plot the partial line. A line with one
-or two points is informative (shows when the entity appeared) — silently
+or two points is informative (shows when the entity appeared) - silently
 hiding it would be worse than the warning.
 
 **Files.** `src/ner.py` (`plot_entity_dynamics`)
 
 ---
 
-## Task 11 — `src/summarizer.py`
+## Task 11 - `src/summarizer.py`
 
 ### 11.1 Sentence splitter strips and filters empty strings
 
 **Issue.** Spec: "summary_sentence_count (split on sentence-ending punctuation: . ! ?)".
-Naive `re.split(r"[.!?]", "Hello. World.")` returns `["Hello", " World", ""]` —
+Naive `re.split(r"[.!?]", "Hello. World.")` returns `["Hello", " World", ""]` -
 the trailing empty string would inflate `sentence_count` and skew
 `avg_sentence_chars`.
 
@@ -502,7 +502,7 @@ is a non-misleading placeholder.
 **Issue.** Spec doesn't specify whether the check examines the summary as a
 whole or the final sentence post-split.
 
-**Decision.** `summary.endswith((".", "!", "?"))` — applied to the whole
+**Decision.** `summary.endswith((".", "!", "?"))` - applied to the whole
 summary. This correctly flags summaries ending with whitespace, quotes, or
 incomplete sentences (e.g. truncated by max_length). Checking the last
 sentence post-split would always pass for any summary that contained at least
@@ -512,7 +512,7 @@ one `. ! ?` anywhere.
 
 ---
 
-## Task 12 — `src/similarity.py`
+## Task 12 - `src/similarity.py`
 
 ### 12.1 `build_similarity_dataframe` does NOT substitute title with id
 
@@ -520,7 +520,7 @@ one `. ! ?` anywhere.
 (`build_summary_quality_dataframe`) both substitute `f"[id: {article['id']}]"`
 when `title == ""`. Spec for `build_similarity_dataframe` is silent on this.
 
-**Decision.** Use raw `article.get("title", "")` — no substitution. Following
+**Decision.** Use raw `article.get("title", "")` - no substitution. Following
 the spec literally rather than copying the pattern from sibling modules. If a
 notebook reader needs the substitution they can derive it from `article_id`.
 
@@ -549,7 +549,7 @@ front avoids the `_id_str` column creation and is explicit.
 
 ---
 
-## Task 13 — `src/topic_predictor.py`
+## Task 13 - `src/topic_predictor.py`
 
 ### 13.1 Empty eligible pool / non-positive `sample_size` short-circuits to `[]`
 
@@ -604,7 +604,7 @@ and keeps the output faithful to the article dict shape.
 
 ---
 
-## Task 14 — `tests/conftest.py` and `tests/test_data_loader.py`
+## Task 14 - `tests/conftest.py` and `tests/test_data_loader.py`
 
 ### 14.1 Files already existed with broader coverage than the task minimum
 
@@ -625,7 +625,7 @@ named-3 list would lose coverage that the spec also justifies.
 
 ---
 
-## Task 15 — `tests/test_data_inspector.py`
+## Task 15 - `tests/test_data_inspector.py`
 
 ### 15.1 File already existed with broader coverage
 
@@ -640,7 +640,7 @@ shows `21 passed`. Acceptance criterion ("all tests must pass") is satisfied.
 
 ---
 
-## Task 16 — `tests/test_data_normalizer.py`
+## Task 16 - `tests/test_data_normalizer.py`
 
 ### 16.1 Tests use real JSONL I/O instead of mocking `load_raw_records`
 
@@ -659,7 +659,7 @@ recommendation, not a correctness requirement.
 
 ---
 
-## Task 17 — `tests/test_preprocessing.py`
+## Task 17 - `tests/test_preprocessing.py`
 
 ### 17.1 spaCy model fully mocked via FakeNLP instead of skipif-on-installed
 
@@ -682,7 +682,7 @@ spaCy itself, not of preprocessing. All 17 tests pass.
 
 ---
 
-## Task 18 — `tests/test_ner.py`
+## Task 18 - `tests/test_ner.py`
 
 ### 18.1 File already existed with 28 tests covering all 7 named cases plus extras
 
@@ -700,7 +700,7 @@ error robustness, schema column check, empty-input DataFrame, and
 
 ---
 
-## Task 19 — `tests/test_summarizer.py`
+## Task 19 - `tests/test_summarizer.py`
 
 ### 19.1 File already existed with 18 tests covering all 9 named cases plus extras
 
@@ -717,16 +717,16 @@ handling, id-substitution for empty title).
 
 ---
 
-## Task 20 — `tests/test_similarity.py` and `tests/test_topic_predictor.py`
+## Task 20 - `tests/test_similarity.py` and `tests/test_topic_predictor.py`
 
-### 20.1 Bug fix in `calculate_similarity` — broken batched-encode call
+### 20.1 Bug fix in `calculate_similarity` - broken batched-encode call
 
 **Issue.** `src/similarity.py::calculate_similarity` called
 `model.encode([original, summary])` once, then sliced
 `embeddings[0:1]` / `embeddings[1:2]`, assuming the model returns a (2, dim)
 batched tensor. The `mock_embedding_model` fixture in `conftest.py` returns a
 fixed `torch.tensor([[0.5, 0.5, 0.5]])` of shape `(1, 3)` per call (this is
-mandated by the spec note "shape MUST be (1, dim) — cos_sim requires 2D"). On
+mandated by the spec note "shape MUST be (1, dim) - cos_sim requires 2D"). On
 this mock the second slice was empty and `float(similarity[0][0])` raised
 `IndexError: index 0 is out of bounds for dimension 0 with size 0`. Three tests
 failed: `test_calculate_similarity_returns_python_float`,
@@ -755,7 +755,7 @@ tests/test_topic_predictor.py -v` shows `27 passed`.
 
 ---
 
-## Task 21 — `scripts/review_spec.py`
+## Task 21 - `scripts/review_spec.py`
 
 ### 21.1 New file created from the task's exact spec
 
@@ -773,7 +773,7 @@ defaults to `docs/SPEC_v3.md`. Acceptance import check passes:
 
 ---
 
-## Task 22 — `notebooks/analysis.ipynb`
+## Task 22 - `notebooks/analysis.ipynb`
 
 ### 22.1 First draft had 19 cells; corrected to exactly 17
 
@@ -790,16 +790,293 @@ markdown (Cell 17 placeholder).
 
 ### 22.2 Cell 17 is a non-empty placeholder markdown cell
 
-**Issue.** The task wording says "Cell 17 — Empty markdown cell — placeholder
+**Issue.** The task wording says "Cell 17 - Empty markdown cell - placeholder
 for human-written summary findings" while the SPEC body shows Cell 17 as
 "Summary report" with a `# Human-written markdown cell summarising findings:
 country scope, entity counts, ...` comment listing what should be written.
 Strict "empty markdown" vs. "placeholder summary heading" is ambiguous.
 
-**Decision.** Wrote Cell 17 as a markdown cell containing the `## Cell 17 —
+**Decision.** Wrote Cell 17 as a markdown cell containing the `## Cell 17 -
 Summary report` heading plus a one-line italic placeholder listing what to
 summarise. This makes the gap discoverable in a rendered notebook without
 pre-judging the author's findings. `jupyter nbconvert --to script
-notebooks/analysis.ipynb --stdout` exits 0 — JSON is valid.
+notebooks/analysis.ipynb --stdout` exits 0 - JSON is valid.
 
 **Files.** `notebooks/analysis.ipynb` (Cell 17)
+
+---
+
+## fix/code_test branch — Language-only grouping (2026-05-18)
+
+### FIX-1 Wikinews `text` field is a list, not a string
+
+**Issue.** The raw Wikinews JSONL stores `text` as a list of paragraph strings.
+`normalise_articles` expected a string and silently produced `None` text for
+every record, causing them all to fail the `text_too_short` or `no_text_field`
+check. This was a data-format assumption not covered by the SPEC.
+
+**Fix.** Added a join step in `normalise_articles` immediately after
+FIELD_MAPPINGS resolution: if `working["text"]` is a list, join with `" "`.
+The SPEC step 2 says "apply FIELD_MAPPINGS" but does not specify list handling
+— this is a format-specific normalisation gap. Logged here as a deviation.
+
+**Files.** `src/data_normalizer.py` (join step before `_infer_text_field`)
+
+### FIX-2 Country filtering produced insufficient German samples; switched to language-only grouping
+
+**Issue.** With `countries=["United States", "Germany"]`, Germany/Science had
+1 article and Germany/Politics had 8 — both below the `articles_per_topic_min`
+threshold. This made cross-country analysis meaningless for German articles.
+
+**Decision.** Pass `countries=None` in both notebook passes. Country is
+extracted from categories as best-effort metadata using a `_KNOWN_COUNTRIES`
+vocabulary rather than a configured filter list. Sampling groups by
+`(language, topic)` only, so `max_per_topic` applies to the full pool per
+language×topic cell. See `docs/decisions/0005-language-only-grouping.md`.
+
+**Deviation from SPEC.** SPEC originally required `countries` to be non-empty.
+SPEC updated to reflect `Optional[list[str]]` signature and dual-mode behaviour.
+
+**Files.** `src/data_normalizer.py`, `notebooks/analysis.ipynb` (Cells 7 & 8),
+`docs/SPEC_v3.md`, `docs/decisions/0005-language-only-grouping.md`
+
+### FIX-3 Cell 8 inconsistently used country filtering while Cell 7 did not
+
+**Issue.** An earlier partial fix changed Cell 7 to `countries=None` but left
+Cell 8 passing `config["countries"]["selected"]`. The two passes used different
+article pools, making the pipeline inconsistent.
+
+**Fix.** Cell 8 updated to `countries=None` to match Cell 7.
+
+**Files.** `notebooks/analysis.ipynb` (Cell 8)
+
+---
+
+## fix/code_test branch — Task 3 NER fixes (2026-05-18)
+
+### FIX-4 NER pass capped at 20/topic; added `articles_per_topic_ner` config key
+
+**Issue.** Cell 7 used `articles_per_topic_max` (20) for the NER pass, the same
+cap as summarisation (Task 4). Task 3 has no sample size restriction in the
+assignment. 120 articles is too small, especially for German, which is the
+lower-resource language in the comparison.
+
+**Decision.** Added `articles_per_topic_ner: 100` to `config/config.yaml` under
+`topics`. Cell 7 (NER pass) reads this key; Cell 8 (summarisation) unchanged at
+20/topic. Result: 600 NER articles (300 en + 300 de). ADR 0005's "120 total for
+NER" figure in **Consequences** was superseded — a postscript was appended
+pointing at this FIX rather than rewriting the original ADR body.
+
+**Files.** `config/config.yaml`, `notebooks/analysis.ipynb` (Cell 7,
+id `0998774e`), `docs/SPEC_v3.md`,
+`docs/decisions/0005-language-only-grouping.md`
+
+### FIX-5 Cell 13 looped over 29 countries; replaced with language-level calls
+
+**Issue.** Cell 13 iterated `entity_df["country"].dropna().unique()` (29 values)
+and called `plot_top_entities`, `plot_entity_dynamics`, and
+`investigate_ner_errors` once per country. With `countries=None` in
+normalisation (per ADR 0005), country is best-effort metadata — not a primary
+grouping axis. Result: 58 mostly-empty plot calls and `investigate_ner_errors`
+restricted to German only, split across 29 fragments.
+
+**Decision.** Replaced all country loops with 2 language-level calls each
+(`country=None`). `investigate_ner_errors` now runs for both `en` and `de`.
+Country still surfaces as a column in the error output tables (metadata, not
+filter). Also fixed an inherited broken doc reference: the Cell 7 comment
+pointed at `docs/DECISIONS.md` (deleted); updated to
+`docs/decisions/0005-language-only-grouping.md`.
+
+**Deviation from SPEC.** SPEC originally described per-country plots; SPEC
+updated to language-only following ADR 0005 (language-only grouping). The
+pre-existing SPEC drift around `countries=config["countries"]["selected"]` in
+Cells 6/7 (introduced when FIX-2 missed the SPEC) was *not* touched here — out
+of scope for Task 3.
+
+**Files.** `notebooks/analysis.ipynb` (Cell 13, id `10fc9f56`; Cell 7,
+id `0998774e` for the doc-link fix), `docs/SPEC_v3.md`
+
+---
+
+## fix/code_test branch — Country column removed from outputs (2026-05-19)
+
+### FIX-6 `country` column dropped from output DataFrames and visualisation APIs
+
+**Issue.** After ADR 0005 moved sampling to `(language, topic)` and FIX-5
+moved NER/similarity plots to language-only and topic-only axes, the `country`
+column lingered in `build_entity_dataframe`, `build_similarity_dataframe`,
+`investigate_ner_errors`, and `explain_similarity_extremes` outputs without
+being consumed anywhere. The column is also unreliable: `_extract_country_from_categories`
+returns `""` whenever an article's categories list doesn't contain a recognised
+country name, so a German article about Berlin might show `country=""` while a
+near-identical article shows `country="germany"`. A column that's often empty
+and never reliable is worse than no column.
+
+**Decision.** Remove `country` from all user-facing DataFrames and remove the
+unused `country: Optional[str] = None` parameters from `plot_top_entities`,
+`plot_entity_dynamics`, and `investigate_ner_errors`. The article-level
+`country` field is still populated during normalisation (no change to
+`normalise_articles` or `_extract_country_from_categories`) — only the
+output surface is trimmed. ADR 0005 updated with a postscript noting this.
+
+**Files.** `src/ner.py`, `src/similarity.py`,
+`notebooks/analysis.ipynb` (Cell 13, id `10fc9f56`),
+`tests/test_ner.py`, `tests/test_similarity.py`,
+`docs/SPEC_v3.md`, `docs/decisions/0005-language-only-grouping.md`
+
+---
+
+## fix/code_test branch — Topic prediction improvements (2026-05-19)
+
+### FIX-7 Topic prediction: drop country column, raise sample size, add error visualisations
+
+**Issue.** Cell 17 had three weaknesses for reviewer-facing output:
+1. The displayed results DataFrame still carried a `country` column — a leftover
+   from before FIX-6, now meaningless once country was removed from all other
+   user-facing outputs.
+2. `topic_prediction.sample_size: 30` evaluated half the available pool (60
+   summarised articles). With BART-large-mnli's per-article cost already paid
+   in Cell 14, there's no reason to evaluate only half — full-pool evaluation
+   doubles the signal at the same model-load cost.
+3. The cell printed an accuracy number and a flat results DataFrame but had no
+   visualisation of the error structure. A reviewer asking "which topics get
+   confused with which?" had to read the DataFrame row by row.
+
+**Decision.**
+1. Removed `"country": article.get("country")` from
+   `evaluate_topic_predictions` ([src/topic_predictor.py:163](../src/topic_predictor.py#L163)).
+2. Raised `topic_prediction.sample_size` from 30 to 60 in
+   [config/config.yaml](../config/config.yaml). 60 matches the full summarisation
+   pool (3 topics × 20 articles × en only).
+3. Added two new plot functions:
+   - `plot_topic_confusion_matrix(eval_results, candidate_labels)` — heatmap
+     with annotated counts; the comprehensive "what gets predicted as what" view.
+   - `plot_topic_error_breakdown(eval_results)` — three-panel bar chart:
+     errors by true topic, errors by predicted topic, and overall
+     correct/wrong/None counts.
+
+Cell 17 now calls both at the end. The two views are complementary: the
+confusion matrix is the standard classification-analysis view, the breakdown
+answers the specific "which true topic is most misinterpreted?" and "which
+predicted topic is least reliable?" questions directly.
+
+**Files.** `src/topic_predictor.py`, `config/config.yaml`,
+`notebooks/analysis.ipynb` (Cell 17, id `e30153df`),
+`docs/SPEC_v3.md`
+
+---
+
+## fix/code_test branch — Country vocabulary sourced from pycountry (2026-05-20)
+
+### FIX-8 Hand-maintained `_KNOWN_COUNTRIES` list replaced with pycountry (ISO 3166)
+
+**Issue.** `_KNOWN_COUNTRIES` in `data_normalizer.py` was a ~56-entry frozenset
+of country names typed out by hand. It was incomplete (only common countries),
+a maintenance liability, and an obvious code smell.
+
+**Decision.** Generate the set from `pycountry` (the standard ISO 3166 data
+package, added to `pyproject.toml`). The set is built from each country's
+`name`, `common_name`, and `official_name` fields, normalised with
+`_normalise_topic_string`. This gives complete coverage with no hand-maintained
+list.
+
+**Gotcha handled.** pycountry uses ISO formal names, two of which diverge from
+the colloquial English forms Wikinews categories use:
+
+- Russia → pycountry `name` is "Russian Federation" (no `common_name`).
+- Turkey → pycountry `name` is "Türkiye" (the 2022 ISO rename).
+
+A naive swap would have silently stopped recognising both. A small documented
+`_COUNTRY_ALIASES = {"russia", "turkey"}` frozenset is unioned into
+`_KNOWN_COUNTRIES` to close that gap. All other 54 names from the previous
+hand-maintained list are covered by pycountry directly.
+
+**Safety.** `_extract_country_from_categories` matches by exact (normalised)
+string equality, not substring — so the broader ISO coverage does not introduce
+substring false positives (e.g. "Georgia" the country vs. a "Georgia (U.S.
+state)" category, which normalises differently and will not match).
+
+**Files.** `src/data_normalizer.py`, `pyproject.toml`,
+`docs/SPEC_v3.md`, `docs/decisions/0005-language-only-grouping.md`
+
+---
+
+## fix/code_test branch — Validation report trimmed for readability (2026-05-20)
+
+### FIX-9 `print_validation_report` dumped ~130 dict entries; trimmed to a scannable summary
+
+**Issue.** `print_validation_report` logged the full `countries_found` dict
+(~47 entries) and the full `country_topic_counts` dict (~80 entries) on single
+lines, plus separate INFO lines for below-minimum pairs and missing-from-config
+items that simply duplicated the warnings logged immediately below them. The
+result was a wall of text a human reviewer could not scan.
+
+**Decision.** Rewrote `print_validation_report` to log only headline statistics
+as INFO:
+- Total articles, Languages, Topics (small dicts — kept inline).
+- Countries: a single summary line — `N distinct (top: a=.., b=.., c=..)` —
+  rather than the full dict. Country is metadata only (not a pipeline axis,
+  per ADR 0005 / FIX-6), so one showcase line is enough.
+- Data quality: one combined line for missing dates / titles / very short.
+
+The full `countries_found` / `country_topic_counts` dicts are no longer logged
+line by line — they remain on the `NormalisedValidation` object for
+programmatic access. Redundant INFO lines for below-minimum pairs and
+missing-from-config items were dropped; the stored warnings already enumerate
+those, so nothing actionable is lost.
+
+**Files.** `src/data_inspector.py`, `docs/SPEC_v3.md`
+
+---
+
+## fix/code_test branch — NER aggregation and offset handling (2026-05-20)
+
+### FIX-10 `aggregation_strategy="simple"` fragmented words; offset check discarded real entities
+
+**Issue.** Cell 11/12 NER runs logged many `Discarding entity with offset
+mismatch` warnings. Two distinct BERT subword-tokenisation artefacts were behind
+them:
+
+1. `aggregation_strategy="simple"` merges consecutive same-label tokens but
+   splits a word when the model tags its WordPiece subwords inconsistently —
+   producing fragmentary `##`-prefixed entities (`##ikiLeaks` for "WikiLeaks",
+   `##erry Henry` for "Thierry Henry").
+2. The pipeline's reconstructed `.word` field is lossy — it inserts spurious
+   spaces ("U.S." becomes "U. S.", "Children's" becomes "Children ' s").
+
+`_resolve_overlapping_entities` validated entities by comparing the lossy
+`.word` against `cleaned_text[start:end]` and discarding mismatches. The net
+effect: real entities (WikiLeaks, Thierry Henry, McClelland, U.S.) were
+silently dropped — a recall bug in the Task 3 NER results, not just log noise.
+
+**Decision.** Two coordinated changes:
+
+1. **`load_ner_pipeline`:** `aggregation_strategy` changed from `"simple"` to
+   `"average"`. `"average"` is a word-level strategy — it groups subwords into
+   whole words before assigning a label, so `##`-prefixed fragments structurally
+   cannot occur.
+2. **`_resolve_overlapping_entities`:** the fast tokenizer's character offsets
+   are treated as ground truth. For each in-bounds entity, `entity["text"]` is
+   overwritten with the canonical slice `cleaned_text[start:end]` rather than
+   trusting the lossy `.word`. Only genuinely out-of-bounds offsets (a real bug
+   signal) are discarded, with a clearer warning. `run_ner`'s single-chunk path
+   now also routes through `_resolve_overlapping_entities` so entity text is
+   canonicalised identically for short and long articles.
+
+**Effect on results.** NER output changes — for the better. Entities previously
+discarded are now recognised; this raises recall. Task 3 entity counts will
+shift accordingly; this is correct, not a regression.
+
+**Tests.** `test_resolve_overlapping_entities_discards_offset_mismatch` (which
+asserted the old discard-on-mismatch behaviour) was replaced by two tests:
+`test_resolve_overlapping_entities_corrects_text_from_offsets` (in-bounds →
+text corrected from the slice) and
+`test_resolve_overlapping_entities_discards_out_of_bounds_offsets`
+(out-of-bounds → discarded).
+
+**Notebook.** A markdown design-note cell was added above Cell 11 summarising
+the change for reviewers.
+
+**Files.** `src/ner.py`, `tests/test_ner.py`,
+`notebooks/analysis.ipynb` (new markdown cell `ner-aggregation-note`),
+`docs/SPEC_v3.md`

@@ -1,4 +1,4 @@
-# PRD — Wikinews NLP Analysis Pipeline
+# PRD - Wikinews NLP Analysis Pipeline
 
 **Project:** Wikinews NLP Analysis  
 **Role:** Data Scientist  
@@ -25,24 +25,24 @@ News articles are long. A company monitoring competitor activity, political deve
 
 ---
 
-## What the pipeline does — in plain English
+## What the pipeline does - in plain English
 
-**Step 1 — Data loading and exploration**  
+**Step 1 - Data loading and exploration**  
 Download the Wikinews dataset from GitHub if it is not already present. Inspect the raw data to identify available category labels and article counts. Because Wikinews stores both topical labels and country labels in the `categories` field, the notebook should show counts that help the user choose viable topics and countries. The workflow is non-interactive: review the inspection table, update `config.yaml` with the chosen countries and topics, then rerun/proceed through the notebook.
 
-**Step 2 — Preprocessing**  
+**Step 2 - Preprocessing**  
 Clean the raw article text (remove markup, extra whitespace, URLs). Tokenise each article into sentences and words. Tag each word with its part of speech. Store the processed result alongside the original article and its metadata (title, date, language, country, topic, event ID).
 
-**Step 3 — Named Entity Recognition (NER)**  
+**Step 3 - Named Entity Recognition (NER)**  
 Run NER on the preprocessed articles. Use `dslim/bert-base-NER` via HuggingFace for English articles and `Davlan/bert-base-multilingual-cased-ner-hrl` for German articles. Record each entity found: its text, its type (person, organisation, location, etc.), the article it came from, and the article's country, topic, language, and date. Then analyse the results in two ways: an aggregated count of which entities appear most often, and a view of how entity frequency changes over time. Separately, investigate likely German NER errors using low-confidence entity predictions; these cases should be collected and shown as candidates for manual review.
 
-**Step 4 — Summarisation**  
+**Step 4 - Summarisation**  
 For each selected country-topic group, take 10 to 20 English articles and summarise them using `facebook/bart-large-cnn` via HuggingFace. Each summary goes into the article result data alongside the original text and metadata. The notebook should display summary results and a lightweight grammar/style quality table.
 
-**Step 5 — Similarity scoring**  
+**Step 5 - Similarity scoring**  
 For each original–summary pair, calculate a similarity score using sentence embeddings. Scores above 0.8 are considered acceptable for business use. Visualise the score distribution per country-topic group. Explain in the notebook which articles got the lowest scores and why.
 
-**Step 6 — Topic prediction**  
+**Step 6 - Topic prediction**  
 Take a sample of articles whose topic label has been hidden. Use a zero-shot classifier to predict the most likely topic. Compare predictions against the real labels and report accuracy.
 
 ---

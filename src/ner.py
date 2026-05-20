@@ -1,13 +1,12 @@
 """Named entity recognition for English and German articles."""
 
 import logging
-from collections import Counter
-from typing import Optional
+from typing import cast
 
 import pandas as pd
-from transformers import pipeline as hf_pipeline
+from transformers import Pipeline
 
-from src.utils import get_device
+from src.utils import get_device, make_hf_pipeline
 
 logger = logging.getLogger(__name__)
 
@@ -27,14 +26,21 @@ def validate_ner_config(config: dict) -> None:
         )
 
 
-def load_ner_pipeline(model_name: str, language: str) -> object:
-    """Load a HuggingFace NER pipeline with simple aggregation."""
+def load_ner_pipeline(model_name: str, language: str) -> Pipeline:
+    """Load a HuggingFace NER pipeline with word-level aggregation.
+
+    Uses aggregation_strategy="average" (a word-level strategy) rather than
+    "simple". "simple" merges consecutive same-label tokens but splits a word
+    when the model tags its BERT subword pieces inconsistently, producing
+    fragmentary "##"-prefixed entities. "average" aggregates per whole word, so
+    subword fragments cannot occur. See FIX-10.
+    """
     try:
-        pipe = hf_pipeline(
+        pipe = make_hf_pipeline(
             "ner",
             model=model_name,
             device=get_device(),
-            aggregation_strategy="simple",
+            aggregation_strategy="average",
         )
     except Exception as exc:
         raise RuntimeError(
@@ -52,9 +58,7 @@ def _chunk_text(text: str, chunk_size: int, overlap: int) -> list[tuple[str, int
     if chunk_size <= 0:
         raise ValueError(f"chunk_size must be > 0, got {chunk_size}")
     if overlap >= chunk_size:
-        raise ValueError(
-            f"overlap ({overlap}) must be < chunk_size ({chunk_size})"
-        )
+        raise ValueError(f"overlap ({overlap}) must be < chunk_size ({chunk_size})")
     if not text:
         return []
 
@@ -120,7 +124,9 @@ def _resolve_overlapping_entities(
         if existing is None or ent["score"] > existing["score"]:
             by_key[key] = ent
 
-    candidates = sorted(by_key.values(), key=lambda e: (e["start"], -(e["end"] - e["start"]), -e["score"]))
+    candidates = sorted(
+        by_key.values(), key=lambda e: (e["start"], -(e["end"] - e["start"]), -e["score"])
+    )
 
     kept: list[dict] = []
     for ent in candidates:
@@ -154,16 +160,20 @@ def _resolve_overlapping_entities(
     validated: list[dict] = []
     for ent in kept:
         start, end = ent["start"], ent["end"]
-        if 0 <= start < end <= len(cleaned_text) and cleaned_text[start:end] == ent["text"]:
+        if 0 <= start < end <= len(cleaned_text):
+            # The fast tokenizer's character offsets are reliable; the pipeline's
+            # reconstructed `.word` is lossy (spurious spaces like "U. S." for
+            # "U.S.", leftover "##" subword markers). Take the canonical source
+            # slice as the entity text rather than trusting `.word`. See FIX-10.
+            ent["text"] = cleaned_text[start:end]
             validated.append(ent)
         else:
             logger.warning(
-                "Discarding entity with offset mismatch: text=%r start=%d end=%d "
-                "actual_slice=%r",
+                "Discarding entity with out-of-bounds offsets: text=%r start=%d end=%d text_len=%d",
                 ent.get("text"),
                 start,
                 end,
-                cleaned_text[start:end] if 0 <= start <= end <= len(cleaned_text) else None,
+                len(cleaned_text),
             )
 
     validated.sort(key=lambda e: e["start"])
@@ -171,8 +181,15 @@ def _resolve_overlapping_entities(
 
 
 _ENTITY_DF_COLUMNS = [
-    "article_id", "event_id", "title", "date", "language",
-    "country", "topic", "entity_text", "entity_label", "score",
+    "article_id",
+    "event_id",
+    "title",
+    "date",
+    "language",
+    "topic",
+    "entity_text",
+    "entity_label",
+    "score",
 ]
 
 
@@ -188,7 +205,7 @@ def _convert_raw_entity(raw: dict) -> dict:
 
 def run_ner(
     articles: list[dict],
-    ner_pipeline: object,
+    ner_pipeline: Pipeline,
     language: str,
     chunk_size: int,
     chunk_overlap: int,
@@ -213,13 +230,18 @@ def run_ner(
 
         try:
             if len(cleaned) <= chunk_size:
-                raw_entities = ner_pipeline(cleaned)
-                entities = [_convert_raw_entity(e) for e in raw_entities]
+                raw_entities = cast(list[dict], ner_pipeline(cleaned))
+                # Route through _resolve_overlapping_entities even for the
+                # single-chunk case so entity text is canonicalised from the
+                # source offsets identically to the chunked path. See FIX-10.
+                entities = _resolve_overlapping_entities(
+                    [_convert_raw_entity(e) for e in raw_entities], cleaned
+                )
             else:
                 chunks = _chunk_text(cleaned, chunk_size, chunk_overlap)
                 collected: list[dict] = []
                 for chunk_text, chunk_offset in chunks:
-                    chunk_raw = ner_pipeline(chunk_text)
+                    chunk_raw = cast(list[dict], ner_pipeline(chunk_text))
                     for raw in chunk_raw:
                         ent = _convert_raw_entity(raw)
                         ent["start"] += chunk_offset
@@ -255,46 +277,35 @@ def build_entity_dataframe(articles: list[dict]) -> pd.DataFrame:
             continue
         title = _display_title(article)
         for ent in entities:
-            rows.append({
-                "article_id": article.get("id"),
-                "event_id": article.get("event_id"),
-                "title": title,
-                "date": article.get("date"),
-                "language": article.get("language"),
-                "country": article.get("country"),
-                "topic": article.get("topic"),
-                "entity_text": ent.get("text"),
-                "entity_label": ent.get("label"),
-                "score": ent.get("score"),
-            })
+            rows.append(
+                {
+                    "article_id": article.get("id"),
+                    "event_id": article.get("event_id"),
+                    "title": title,
+                    "date": article.get("date"),
+                    "language": article.get("language"),
+                    "topic": article.get("topic"),
+                    "entity_text": ent.get("text"),
+                    "entity_label": ent.get("label"),
+                    "score": ent.get("score"),
+                }
+            )
     if not rows:
         return pd.DataFrame(columns=_ENTITY_DF_COLUMNS)
     return pd.DataFrame(rows, columns=_ENTITY_DF_COLUMNS)
 
 
-def _filter_df(
-    df: pd.DataFrame, language: str, country: Optional[str] = None
-) -> pd.DataFrame:
-    out = df[df["language"] == language]
-    if country is not None:
-        out = out[out["country"] == country]
-    return out
+def _filter_df(df: pd.DataFrame, language: str) -> pd.DataFrame:
+    return df[df["language"] == language]
 
 
-def plot_top_entities(
-    df: pd.DataFrame,
-    top_n: int,
-    language: str,
-    country: Optional[str] = None,
-) -> None:
+def plot_top_entities(df: pd.DataFrame, top_n: int, language: str) -> None:
     """Plot horizontal bar chart of top_n entity_text values by distinct article_id count."""
     import matplotlib.pyplot as plt
 
-    subset = _filter_df(df, language, country)
+    subset = _filter_df(df, language)
     if subset.empty:
-        logger.warning(
-            "plot_top_entities: no rows for language=%r country=%r", language, country
-        )
+        logger.warning("plot_top_entities: no rows for language=%r", language)
         return
 
     counts = (
@@ -307,8 +318,7 @@ def plot_top_entities(
         logger.warning("plot_top_entities: no entities after grouping.")
         return
 
-    title_suffix = f" — {country}" if country else ""
-    title = f"Top {top_n} entities{title_suffix} — {language.upper()}"
+    title = f"Top {top_n} entities - {language.upper()}"
 
     fig, ax = plt.subplots(figsize=(8, max(3, 0.3 * len(counts))))
     counts.iloc[::-1].plot(kind="barh", ax=ax)
@@ -322,17 +332,16 @@ def plot_entity_dynamics(
     df: pd.DataFrame,
     entity_names: list[str],
     language: str,
-    country: Optional[str] = None,
 ) -> None:
     """Plot one line per named entity showing distinct-article count per year-month."""
     import matplotlib.pyplot as plt
 
-    subset = _filter_df(df, language, country)
+    subset = _filter_df(df, language)
     subset = subset[subset["entity_text"].isin(entity_names)]
     if subset.empty:
         logger.warning(
-            "plot_entity_dynamics: no rows matching entity names for language=%r country=%r",
-            language, country,
+            "plot_entity_dynamics: no rows matching entity names for language=%r",
+            language,
         )
         return
 
@@ -342,17 +351,14 @@ def plot_entity_dynamics(
         logger.warning("plot_entity_dynamics: no parseable dates after coercion.")
         return
 
-    subset = subset.assign(
-        year_month=subset["_parsed_date"].dt.to_period("M")
-    )
+    subset = subset.assign(year_month=subset["_parsed_date"].dt.to_period("M"))
     grouped = (
         subset.groupby(["entity_text", "year_month"])["article_id"]
         .nunique()
         .reset_index(name="article_count")
     )
 
-    title_suffix = f" — {country}" if country else ""
-    title = f"Entity dynamics{title_suffix} — {language.upper()}"
+    title = f"Entity dynamics - {language.upper()}"
 
     fig, ax = plt.subplots(figsize=(10, 5))
     for ent_name in entity_names:
@@ -362,7 +368,8 @@ def plot_entity_dynamics(
         if len(line) < 3:
             logger.warning(
                 "plot_entity_dynamics: entity %r has fewer than 3 data points (%d).",
-                ent_name, len(line),
+                ent_name,
+                len(line),
             )
         x_labels = [str(p) for p in line["year_month"]]
         ax.plot(x_labels, line["article_count"].tolist(), marker="o", label=ent_name)
@@ -379,18 +386,19 @@ def investigate_ner_errors(
     articles: list[dict],
     language: str,
     error_score_threshold: float,
-    country: Optional[str] = None,
 ) -> pd.DataFrame:
     """Return low-confidence entities, sorted by score ascending."""
     columns = [
-        "article_id", "event_id", "country", "title",
-        "entity_text", "entity_label", "score",
+        "article_id",
+        "event_id",
+        "title",
+        "entity_text",
+        "entity_label",
+        "score",
     ]
     rows: list[dict] = []
     for article in articles:
         if article.get("language") != language:
-            continue
-        if country is not None and article.get("country") != country:
             continue
         entities = article.get("entities")
         if entities is None:
@@ -399,15 +407,20 @@ def investigate_ner_errors(
         for ent in entities:
             score = ent.get("score", 0.0)
             if score < error_score_threshold:
-                rows.append({
-                    "article_id": article.get("id"),
-                    "event_id": article.get("event_id"),
-                    "country": article.get("country"),
-                    "title": title,
-                    "entity_text": ent.get("text"),
-                    "entity_label": ent.get("label"),
-                    "score": score,
-                })
+                rows.append(
+                    {
+                        "article_id": article.get("id"),
+                        "event_id": article.get("event_id"),
+                        "title": title,
+                        "entity_text": ent.get("text"),
+                        "entity_label": ent.get("label"),
+                        "score": score,
+                    }
+                )
     if not rows:
         return pd.DataFrame(columns=columns)
-    return pd.DataFrame(rows, columns=columns).sort_values("score", ascending=True).reset_index(drop=True)
+    return (
+        pd.DataFrame(rows, columns=columns)
+        .sort_values("score", ascending=True)
+        .reset_index(drop=True)
+    )

@@ -5,11 +5,12 @@ data:
 
 topics:
   selected:
-    - "Politics and conflicts"
-    - "Science and technology"
-    - "Sports"
+    - "Europe"
+    - "Asia"
+    - "Disasters and accidents"
   articles_per_topic_min: 10
   articles_per_topic_max: 20
+  articles_per_topic_ner: 100     # NER pass only — Task 3 has no sample size limit
 
 countries:
   selected:
@@ -39,7 +40,7 @@ ner:
   error_score_threshold: 0.6
 
 topic_prediction:
-  sample_size: 30
+  sample_size: 60     # Cap: matches full summarisation pool (3 topics × 20 articles, en only)
   hypothesis_template: "This news article is about {}."
 
 similarity:
