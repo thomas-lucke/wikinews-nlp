@@ -2,22 +2,24 @@
 
 Tests are written before the implementation exists. Files use
 ``pytest.importorskip("src.<module>")`` at the top so collection succeeds
-even when the implementation is absent — tests are skipped rather than
+even when the implementation is absent - tests are skipped rather than
 erroring at collection.
 """
-import pytest
+
 from unittest.mock import MagicMock
 
+import pytest
 
 # ---------------------------------------------------------------------------
-# Article fixtures — shapes match SPEC "Article schema" exactly.
+# Article fixtures - shapes match SPEC "Article schema" exactly.
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def sample_en_article() -> dict:
     """Minimal valid English article after normalisation.
 
-    SPEC: Article schema — fields guaranteed after normalise_articles().
+    SPEC: Article schema - fields guaranteed after normalise_articles().
     """
     return {
         "id": "abc123",
@@ -40,7 +42,7 @@ def sample_en_article() -> dict:
 def sample_de_article() -> dict:
     """Minimal valid German article after normalisation.
 
-    SPEC: Article schema — language is ISO 639-1 lowercase ("en" or "de").
+    SPEC: Article schema - language is ISO 639-1 lowercase ("en" or "de").
     """
     return {
         "id": "def456",
@@ -63,7 +65,7 @@ def sample_de_article() -> dict:
 def sample_raw_record() -> dict:
     """A raw record with non-standard field names, for normaliser tests.
 
-    SPEC: FIELD_MAPPINGS — article_body→text, headline→title, publish_date→date,
+    SPEC: FIELD_MAPPINGS - article_body→text, headline→title, publish_date→date,
     lang→language, category→topic, country→country, article_id→id, pageid→event_id.
     """
     return {
@@ -119,14 +121,15 @@ def sample_config() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Mocked external dependencies — shapes MUST match real library returns.
+# Mocked external dependencies - shapes MUST match real library returns.
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def mock_ner_pipeline():
     """Mock HuggingFace NER pipeline.
 
-    SPEC: ner.run_ner — "HuggingFace NER pipelines with aggregation_strategy='simple'
+    SPEC: ner.run_ner - "HuggingFace NER pipelines with aggregation_strategy='simple'
     return dicts with key 'entity_group', not 'label'. run_ner MUST rename this key."
     Mock returns the RAW pre-rename format so tests of run_ner exercise the rename logic.
     """
@@ -141,14 +144,14 @@ def mock_ner_pipeline():
 def mock_summ_pipeline():
     """Mock HuggingFace summarisation pipeline.
 
-    SPEC: summarizer.summarize_article — pipeline has a ``.tokenizer`` attribute with an
+    SPEC: summarizer.summarize_article - pipeline has a ``.tokenizer`` attribute with an
     ``.encode()`` method that returns a list of token ids, and the pipeline call returns
     a list with a single dict containing key 'summary_text'.
     """
     pipeline = MagicMock()
     pipeline.return_value = [{"summary_text": "A short summary of the article."}]
     pipeline.tokenizer = MagicMock()
-    # 100 fake token ids — passes default min_summary_length=50 guard.
+    # 100 fake token ids - passes default min_summary_length=50 guard.
     pipeline.tokenizer.encode.return_value = list(range(100))
     return pipeline
 
@@ -157,7 +160,7 @@ def mock_summ_pipeline():
 def mock_topic_pipeline():
     """Mock HuggingFace zero-shot classification pipeline.
 
-    SPEC: topic_predictor.predict_topic — pipeline returns a dict with 'labels' and
+    SPEC: topic_predictor.predict_topic - pipeline returns a dict with 'labels' and
     'scores' aligned lists; the label with the highest score is the prediction.
     """
     pipeline = MagicMock()
@@ -173,24 +176,26 @@ def mock_topic_pipeline():
 def mock_embedding_model():
     """Mock SentenceTransformer.
 
-    SPEC: similarity.calculate_similarity — model.encode() output is fed into
+    SPEC: similarity.calculate_similarity - model.encode() output is fed into
     util.cos_sim(), which expects 2D tensors of shape (1, dim).
     """
     import torch
+
     model = MagicMock()
     model.encode.return_value = torch.tensor([[0.5, 0.5, 0.5]])
     return model
 
 
 # ---------------------------------------------------------------------------
-# Auto-applied device mock — keeps CI off the GPU.
+# Auto-applied device mock - keeps CI off the GPU.
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(autouse=True)
 def mock_device(monkeypatch):
     """Force CPU device in all tests.
 
-    SPEC: CI note — "GPU and device detection must also be mocked in CI
+    SPEC: CI note - "GPU and device detection must also be mocked in CI
     environments without CUDA." Patches are wrapped in try/except so that this
     autouse fixture does not error when implementation modules do not yet exist.
     """
@@ -203,5 +208,5 @@ def mock_device(monkeypatch):
         try:
             monkeypatch.setattr(target, lambda: -1, raising=False)
         except (ImportError, ModuleNotFoundError, AttributeError):
-            # Implementation module not yet present — fixture is a no-op.
+            # Implementation module not yet present - fixture is a no-op.
             pass

@@ -2,12 +2,12 @@
 
 import logging
 import re
-from typing import Optional
+from typing import Optional, cast
 
 import pandas as pd
-from transformers import pipeline as hf_pipeline
+from transformers import Pipeline
 
-from src.utils import get_device
+from src.utils import get_device, make_hf_pipeline
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +17,16 @@ _REPEATED_WS_RE = re.compile(r"\s{2,}")
 _TERMINAL_PUNCT = (".", "!", "?")
 
 _SUMMARY_QUALITY_COLUMNS = [
-    "article_id", "title", "country", "topic",
-    "summary_char_count", "summary_sentence_count", "avg_sentence_chars",
-    "missing_terminal_punctuation", "repeated_whitespace", "very_long_sentence",
+    "article_id",
+    "title",
+    "country",
+    "topic",
+    "summary_char_count",
+    "summary_sentence_count",
+    "avg_sentence_chars",
+    "missing_terminal_punctuation",
+    "repeated_whitespace",
+    "very_long_sentence",
     "issue_count",
 ]
 
@@ -31,21 +38,20 @@ def validate_summarization_config(config: dict) -> None:
     max_len = summ_cfg["max_summary_length"]
     if min_len >= max_len:
         raise ValueError(
-            f"summarization.min_summary_length ({min_len}) must be < "
-            f"max_summary_length ({max_len})"
+            f"summarization.min_summary_length ({min_len}) must be < max_summary_length ({max_len})"
         )
 
 
-def load_summarization_pipeline(model_name: str) -> object:
+def load_summarization_pipeline(model_name: str) -> Pipeline:
     """Load a HuggingFace summarization pipeline."""
-    pipe = hf_pipeline("summarization", model=model_name, device=get_device())
+    pipe = make_hf_pipeline("summarization", model=model_name, device=get_device())
     logger.info("Loaded summarization pipeline: %s", model_name)
     return pipe
 
 
 def summarize_article(
     text: str,
-    summ_pipeline: object,
+    summ_pipeline: Pipeline,
     min_length: int,
     max_length: int,
 ) -> Optional[str]:
@@ -54,17 +60,25 @@ def summarize_article(
         logger.warning("summarize_article: empty text input, returning None.")
         return None
 
+    assert summ_pipeline.tokenizer is not None  # always set for summarization pipelines
     token_count = len(summ_pipeline.tokenizer.encode(text, add_special_tokens=False))
     if token_count < min_length:
         logger.warning(
             "summarize_article: input token_count=%d < min_length=%d, returning None.",
-            token_count, min_length,
+            token_count,
+            min_length,
         )
         return None
 
+    # Cap max_length to half the input length. Without this, BART warns on every short
+    # article ("max_length=200 but input_length=98") and tends to copy rather than
+    # summarise. Floor at min_length + 10 so the generator has room to add a token or two.
+    effective_max = min(max_length, max(min_length + 10, token_count // 2))
+
     try:
-        result = summ_pipeline(
-            text, truncation=True, min_length=min_length, max_length=max_length
+        result = cast(
+            list[dict[str, str]],
+            summ_pipeline(text, truncation=True, min_length=min_length, max_length=effective_max),
         )
     except Exception:
         logger.exception("summarize_article: pipeline raised; returning None.")
@@ -75,7 +89,7 @@ def summarize_article(
 
 def summarize_articles(
     articles: list[dict],
-    summ_pipeline: object,
+    summ_pipeline: Pipeline,
     config: dict,
 ) -> list[dict]:
     """Summarise qualifying articles in place; non-qualifying articles get no 'summary' key."""
@@ -139,11 +153,7 @@ def _summary_quality_row(article: dict) -> dict:
 
 def build_summary_quality_dataframe(articles: list[dict]) -> pd.DataFrame:
     """Quality flags per generated summary. Empty DF with correct columns if no summaries."""
-    rows = [
-        _summary_quality_row(a)
-        for a in articles
-        if a.get("summary") is not None
-    ]
+    rows = [_summary_quality_row(a) for a in articles if a.get("summary") is not None]
     if not rows:
         return pd.DataFrame(columns=_SUMMARY_QUALITY_COLUMNS)
     return pd.DataFrame(rows, columns=_SUMMARY_QUALITY_COLUMNS)

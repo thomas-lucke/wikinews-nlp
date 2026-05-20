@@ -22,7 +22,7 @@ EXT_TO_FORMAT = {
 
 @dataclass
 class RawProfile:
-    """Results of pass 1 — structural analysis of raw files before any field mapping."""
+    """Results of pass 1 - structural analysis of raw files before any field mapping."""
 
     total_records: int
     detected_format: str
@@ -34,7 +34,7 @@ class RawProfile:
 
 @dataclass
 class NormalisedValidation:
-    """Results of pass 2 — quality checks on the normalised article list."""
+    """Results of pass 2 - quality checks on the normalised article list."""
 
     total_articles: int
     languages_found: dict[str, int]
@@ -117,9 +117,7 @@ def _confirm_parse(raw_path: Path, fmt: str) -> bool:
             ext = fmt_ext.get(fmt)
             if ext is None:
                 return False
-            candidates = sorted(
-                p for p in _direct_child_files(raw_path) if p.suffix.lower() == ext
-            )
+            candidates = sorted(p for p in _direct_child_files(raw_path) if p.suffix.lower() == ext)
         if not candidates:
             return False
         first = candidates[0]
@@ -171,7 +169,7 @@ def detect_format(raw_path: str) -> str:
         ext = p.suffix.lower()
         counts[ext] = counts.get(ext, 0) + 1
     total = len(data_files)
-    dominant_ext = max(counts, key=counts.get)
+    dominant_ext = max(counts, key=lambda k: counts[k])
     if counts[dominant_ext] / total < 0.8:
         return "unknown"
 
@@ -241,16 +239,12 @@ def _load_jsonl_file(path: Path) -> list[dict]:
             try:
                 obj = json.loads(stripped)
             except json.JSONDecodeError as exc:
-                logger.warning(
-                    "Skipping unparseable line %d in %s: %s", lineno, path, exc
-                )
+                logger.warning("Skipping unparseable line %d in %s: %s", lineno, path, exc)
                 continue
             if isinstance(obj, dict):
                 records.append(obj)
             else:
-                logger.warning(
-                    "Skipping non-dict record on line %d in %s", lineno, path
-                )
+                logger.warning("Skipping non-dict record on line %d in %s", lineno, path)
     return records
 
 
@@ -271,9 +265,7 @@ def load_raw_records(raw_path: str, detected_format: str) -> list[dict]:
 
     if detected_format == "directory-of-txt":
         if not path.is_dir():
-            raise ValueError(
-                f"directory-of-txt expected a directory, got file: {raw_path}"
-            )
+            raise ValueError(f"directory-of-txt expected a directory, got file: {raw_path}")
         files = sorted(
             (p for p in _direct_child_files(path) if p.suffix.lower() == ".txt"),
             key=lambda p: p.stem,
@@ -311,7 +303,7 @@ def load_raw_records(raw_path: str, detected_format: str) -> list[dict]:
         skipped = [p for p in all_data_files if p.suffix.lower() != dominant_ext]
         for sp in skipped:
             logger.warning(
-                "Skipping %s — extension %s does not match dominant format %s",
+                "Skipping %s - extension %s does not match dominant format %s",
                 sp,
                 sp.suffix.lower(),
                 detected_format,
@@ -343,9 +335,7 @@ def raw_profile(raw_path: str, detected_format: str) -> RawProfile:
             ext = "." + detected_format
             files = [p for p in _direct_child_files(path) if p.suffix.lower() == ext]
         else:
-            files = [
-                p for p in _direct_child_files(path) if p.suffix.lower() in DATA_EXTENSIONS
-            ]
+            files = [p for p in _direct_child_files(path) if p.suffix.lower() in DATA_EXTENSIONS]
     else:
         files = []
 
@@ -488,10 +478,7 @@ def validate_normalised(
         topic = a.get("topic")
         if isinstance(topic, str) and topic:
             topics_found[topic] = topics_found.get(topic, 0) + 1
-        if (
-            isinstance(country, str) and country
-            and isinstance(topic, str) and topic
-        ):
+        if isinstance(country, str) and country and isinstance(topic, str) and topic:
             key = (country, topic)
             country_topic_counts[key] = country_topic_counts.get(key, 0) + 1
         if not a.get("date"):
@@ -528,25 +515,13 @@ def validate_normalised(
 
     if total == 0:
         errors.append("No articles after normalisation (total_articles == 0).")
-    if (
-        selected_topics_raw
-        and len(topics_missing_from_config) == len(selected_topics_raw)
-    ):
-        errors.append(
-            f"All selected topics missing from articles: {selected_topics_raw}"
-        )
-    if (
-        selected_countries_raw
-        and len(countries_missing_from_config) == len(selected_countries_raw)
-    ):
-        errors.append(
-            f"All selected countries missing from articles: {selected_countries_raw}"
-        )
+    if selected_topics_raw and len(topics_missing_from_config) == len(selected_topics_raw):
+        errors.append(f"All selected topics missing from articles: {selected_topics_raw}")
+    if selected_countries_raw and len(countries_missing_from_config) == len(selected_countries_raw):
+        errors.append(f"All selected countries missing from articles: {selected_countries_raw}")
 
     if total > 0 and missing_date_count > 0.05 * total:
-        warnings.append(
-            f"{missing_date_count}/{total} articles missing date (>5%)."
-        )
+        warnings.append(f"{missing_date_count}/{total} articles missing date (>5%).")
     if total > 0 and very_short_article_count > 0.10 * total:
         warnings.append(
             f"{very_short_article_count}/{total} articles shorter than "
@@ -554,8 +529,7 @@ def validate_normalised(
         )
     for pair in country_topics_below_minimum:
         warnings.append(
-            f"(country='{pair[0]}', topic='{pair[1]}') has fewer than "
-            f"{min_per_topic} articles."
+            f"(country='{pair[0]}', topic='{pair[1]}') has fewer than {min_per_topic} articles."
         )
     for t in topics_missing_from_config:
         warnings.append(f"Topic '{t}' from config not found in articles.")
@@ -582,23 +556,16 @@ def validate_normalised(
     )
 
 
-def print_category_profile(df: pd.DataFrame, top_n: int = 50) -> None:
+def print_category_profile(df: pd.DataFrame) -> None:
     """Log the category profile table via logger.info()."""
     total = df.attrs.get("total_records", 0)
     missing = df.attrs.get("missing_categories_count", 0)
     logger.info("Total parseable records: %d", total)
     logger.info("Records with no usable categories: %d", missing)
-    logger.info("Top %d categories:", top_n)
     if df.empty:
         logger.info("  <no categories found>")
     else:
-        for row in df.head(top_n).itertuples(index=False):
-            logger.info(
-                "  %s — count=%d, percent=%.2f%%",
-                row.category,
-                row.count,
-                row.percent,
-            )
+        logger.info("Categories loaded.")
     logger.info(
         "Review these category labels, update config.yaml topics.selected and "
         "countries.selected if needed, then rerun Cell 1 or reload config "
@@ -607,24 +574,35 @@ def print_category_profile(df: pd.DataFrame, top_n: int = 50) -> None:
 
 
 def print_validation_report(report: NormalisedValidation) -> None:
-    """Log the validation report. logger.info for normals, warning for warnings, error for errors."""
+    """
+    Log a concise, human-scannable validation report.
+
+    Headline statistics go to logger.info; actionable problems are surfaced via
+    the stored warnings (logger.warning) and errors (logger.error). The full
+    per-country and per-(country, topic) breakdowns are intentionally NOT logged
+    line by line - they remain on the NormalisedValidation object for
+    programmatic access, but dumping ~50 countries and ~80 country/topic pairs
+    makes the report unreadable. Country is metadata only (not a pipeline axis),
+    so it gets a single summary line.
+    """
     logger.info("Total articles: %d", report.total_articles)
-    logger.info("Languages found: %s", report.languages_found)
-    logger.info("Countries found: %s", report.countries_found)
-    logger.info("Topics found: %s", report.topics_found)
-    logger.info("Country/topic counts: %s", report.country_topic_counts)
-    logger.info("Missing date count: %d", report.missing_date_count)
-    logger.info("Missing title count: %d", report.missing_title_count)
-    logger.info("Very short articles: %d", report.very_short_article_count)
+    logger.info("Languages: %s", report.languages_found)
+    logger.info("Topics: %s", report.topics_found)
+
+    # Country is best-effort metadata, not a sampling axis - one summary line only.
+    n_countries = len(report.countries_found)
+    if n_countries:
+        top = sorted(report.countries_found.items(), key=lambda kv: kv[1], reverse=True)[:3]
+        top_str = ", ".join(f"{name}={count}" for name, count in top)
+        logger.info("Countries (metadata): %d distinct (top: %s)", n_countries, top_str)
+    else:
+        logger.info("Countries (metadata): none extracted")
+
     logger.info(
-        "Country/topic pairs below minimum: %s", report.country_topics_below_minimum
-    )
-    logger.info(
-        "Topics from config missing in articles: %s", report.topics_missing_from_config
-    )
-    logger.info(
-        "Countries from config missing in articles: %s",
-        report.countries_missing_from_config,
+        "Data quality: %d missing dates, %d missing titles, %d very short",
+        report.missing_date_count,
+        report.missing_title_count,
+        report.very_short_article_count,
     )
 
     for w in report.warnings:
@@ -635,4 +613,4 @@ def print_validation_report(report: NormalisedValidation) -> None:
     if report.validation_passed:
         logger.info("Validation passed.")
     else:
-        logger.error("Validation FAILED — review errors above.")
+        logger.error("Validation FAILED - review errors above.")

@@ -3,18 +3,18 @@
 import logging
 import math
 import random
-from typing import Optional
+from typing import Optional, cast
 
-from transformers import pipeline as hf_pipeline
+from transformers import Pipeline
 
-from src.utils import get_device
+from src.utils import get_device, make_hf_pipeline
 
 logger = logging.getLogger(__name__)
 
 
-def load_topic_pipeline(model_name: str) -> object:
+def load_topic_pipeline(model_name: str) -> Pipeline:
     """Load and return a HuggingFace zero-shot-classification pipeline."""
-    pipeline_obj = hf_pipeline(
+    pipeline_obj = make_hf_pipeline(
         "zero-shot-classification", model=model_name, device=get_device()
     )
     logger.info("Loaded zero-shot topic pipeline: %s", model_name)
@@ -24,7 +24,7 @@ def load_topic_pipeline(model_name: str) -> object:
 def predict_topic(
     text: str,
     candidate_labels: list[str],
-    topic_pipeline: object,
+    topic_pipeline: Pipeline,
     hypothesis_template: str,
 ) -> Optional[str]:
     """Run zero-shot classification and return the highest-scoring label, or None."""
@@ -33,10 +33,13 @@ def predict_topic(
         return None
 
     try:
-        result = topic_pipeline(
-            text,
-            candidate_labels=candidate_labels,
-            hypothesis_template=hypothesis_template,
+        result = cast(
+            dict,
+            topic_pipeline(
+                text,
+                candidate_labels=candidate_labels,
+                hypothesis_template=hypothesis_template,
+            ),
         )
     except Exception:
         logger.warning("predict_topic pipeline raised; returning None.", exc_info=True)
@@ -45,16 +48,14 @@ def predict_topic(
     try:
         return result["labels"][0]
     except (KeyError, IndexError, TypeError):
-        logger.warning(
-            "predict_topic could not extract top label from result; returning None."
-        )
+        logger.warning("predict_topic could not extract top label from result; returning None.")
         return None
 
 
 def predict_all_topics(
     articles: list[dict],
     candidate_labels: list[str],
-    topic_pipeline: object,
+    topic_pipeline: Pipeline,
     hypothesis_template: str,
     sample_size: int,
     random_seed: int = 42,
@@ -184,7 +185,6 @@ def evaluate_topic_predictions(sampled_articles: list[dict]) -> dict:
             {
                 "title": title,
                 "match": match,
-                "country": article.get("country"),
                 "topic": gold,
                 "predicted_topic": predicted,
             }
@@ -199,3 +199,122 @@ def evaluate_topic_predictions(sampled_articles: list[dict]) -> dict:
         "total_sampled": len(sampled_articles),
         "results": results,
     }
+
+
+def plot_topic_confusion_matrix(eval_results: dict, candidate_labels: list[str]) -> None:
+    """Heatmap of true topic vs predicted topic counts.
+
+    Diagonal cells are correct predictions; off-diagonal cells are errors.
+    Order of rows/columns follows candidate_labels for deterministic layout.
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    results = eval_results.get("results", [])
+    if not results:
+        logger.warning("plot_topic_confusion_matrix: no results to plot.")
+        return
+
+    labels = list(candidate_labels)
+    label_index = {label.lower().strip(): i for i, label in enumerate(labels)}
+    n = len(labels)
+    matrix = np.zeros((n, n), dtype=int)
+
+    for row in results:
+        true_key = (row.get("topic") or "").lower().strip()
+        pred_key = (row.get("predicted_topic") or "").lower().strip()
+        if true_key not in label_index or pred_key not in label_index:
+            continue
+        matrix[label_index[true_key], label_index[pred_key]] += 1
+
+    fig, ax = plt.subplots(figsize=(6, 5))
+    im = ax.imshow(matrix, cmap="Blues", aspect="auto")
+    ax.set_xticks(range(n))
+    ax.set_yticks(range(n))
+    ax.set_xticklabels(labels, rotation=30, ha="right")
+    ax.set_yticklabels(labels)
+    ax.set_xlabel("Predicted topic")
+    ax.set_ylabel("True topic")
+    ax.set_title("Confusion matrix — true vs predicted topic")
+    max_val = matrix.max() if matrix.size else 0
+    for i in range(n):
+        for j in range(n):
+            colour = "white" if max_val > 0 and matrix[i, j] > max_val / 2 else "black"
+            ax.text(j, i, str(int(matrix[i, j])), ha="center", va="center", color=colour)
+    fig.colorbar(im, ax=ax, label="Article count")
+    fig.tight_layout()
+
+
+def plot_topic_error_breakdown(eval_results: dict) -> None:
+    """Three-panel breakdown of topic-prediction errors.
+
+    Panel 1: errors grouped by TRUE topic (which topics get misinterpreted).
+    Panel 2: errors grouped by PREDICTED topic (which predictions are unreliable).
+    Panel 3: overall correct / wrong / None counts.
+    """
+    from collections import Counter
+
+    import matplotlib.pyplot as plt
+
+    results = eval_results.get("results", [])
+    if not results:
+        logger.warning("plot_topic_error_breakdown: no results to plot.")
+        return
+
+    errors_by_true: Counter = Counter()
+    errors_by_pred: Counter = Counter()
+    correct = 0
+    wrong = 0
+    for row in results:
+        if row.get("match"):
+            correct += 1
+        else:
+            wrong += 1
+            errors_by_true[row.get("topic", "(unknown)")] += 1
+            errors_by_pred[row.get("predicted_topic", "(unknown)")] += 1
+
+    total_sampled = eval_results.get("total_sampled", 0)
+    evaluated = eval_results.get("evaluated", 0)
+    none_count = max(total_sampled - evaluated, 0)
+
+    fig, axes = plt.subplots(3, 1, figsize=(8, 12))
+
+    def _bar(ax, counter: Counter, title: str, colour: str) -> None:
+        if not counter:
+            ax.text(0.5, 0.5, "No errors", ha="center", va="center", transform=ax.transAxes)
+            ax.set_title(title)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            return
+        sorted_items = sorted(counter.items(), key=lambda kv: kv[1], reverse=True)
+        labels = [k for k, _ in sorted_items]
+        values = [v for _, v in sorted_items]
+        ax.bar(labels, values, color=colour)
+        ax.set_title(title)
+        ax.set_ylabel("Wrong predictions")
+        ax.tick_params(axis="x", rotation=30)
+
+    _bar(
+        axes[0],
+        errors_by_true,
+        "Errors by TRUE topic\n(which topics get misinterpreted?)",
+        "steelblue",
+    )
+    _bar(
+        axes[1],
+        errors_by_pred,
+        "Errors by PREDICTED topic\n(which predictions are unreliable?)",
+        "coral",
+    )
+
+    accuracy_pct = (correct / evaluated * 100) if evaluated > 0 else 0.0
+    axes[2].bar(
+        ["Correct", "Wrong", "None"],
+        [correct, wrong, none_count],
+        color=["seagreen", "indianred", "gray"],
+    )
+    axes[2].set_title(f"Overall: {correct}/{evaluated} correct ({accuracy_pct:.0f}%)")
+    axes[2].set_ylabel("Article count")
+
+    fig.suptitle("Topic prediction error breakdown")
+    fig.tight_layout()

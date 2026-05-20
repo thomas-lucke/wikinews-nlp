@@ -5,10 +5,11 @@ import re
 from typing import Optional
 
 import spacy
+from spacy.language import Language
 
 logger = logging.getLogger(__name__)
 
-_SPACY_MODELS: dict[str, spacy.Language] = {}
+_SPACY_MODELS: dict[str, Language] = {}
 
 
 _WIKI_LINK_RE = re.compile(r"\[\[(?:[^\]|]*\|)?([^\]]*)\]\]")
@@ -18,7 +19,7 @@ _WHITESPACE_RE = re.compile(r"\s+")
 _TEMPLATE_FALLBACK_RE = re.compile(r"\{\{[^}]*\}\}")
 
 
-def _get_spacy_model(language: str, model_name: str) -> spacy.Language:
+def _get_spacy_model(language: str, model_name: str) -> Language:
     """Return cached spaCy model for language, loading on first call."""
     if language in _SPACY_MODELS:
         return _SPACY_MODELS[language]
@@ -26,8 +27,7 @@ def _get_spacy_model(language: str, model_name: str) -> spacy.Language:
         nlp = spacy.load(model_name)
     except OSError:
         raise RuntimeError(
-            f"spaCy model '{model_name}' not found. "
-            f"Run: python -m spacy download {model_name}"
+            f"spaCy model '{model_name}' not found. Run: python -m spacy download {model_name}"
         )
     nlp.max_length = 2_000_000
     _SPACY_MODELS[language] = nlp
@@ -39,10 +39,11 @@ def clean_text(text: str) -> str:
     """Remove MediaWiki markup, HTML, URLs and collapse whitespace."""
     try:
         import mwparserfromhell
+
         cleaned = mwparserfromhell.parse(text).strip_code()
     except ImportError:
         logger.warning(
-            "mwparserfromhell not installed; falling back to regex template removal — "
+            "mwparserfromhell not installed; falling back to regex template removal - "
             "nested templates may not be fully removed."
         )
         cleaned = _TEMPLATE_FALLBACK_RE.sub("", text)
@@ -107,8 +108,7 @@ def preprocess_articles(articles: list[dict], config: dict) -> list[dict]:
             nlp = _get_spacy_model(lang, model_name)
         except RuntimeError:
             logger.exception(
-                "Failed to load spaCy model %r for language %r; "
-                "leaving %d articles unprocessed.",
+                "Failed to load spaCy model %r for language %r; leaving %d articles unprocessed.",
                 model_name,
                 lang,
                 len(group),
@@ -120,9 +120,7 @@ def preprocess_articles(articles: list[dict], config: dict) -> list[dict]:
             try:
                 cleaned = clean_text(article.get("text", ""))
             except Exception:
-                logger.exception(
-                    "clean_text failed for article %r; skipping.", article.get("id")
-                )
+                logger.exception("clean_text failed for article %r; skipping.", article.get("id"))
                 cleaned_pairs.append((article, None))
                 continue
             cleaned_pairs.append((article, cleaned))
@@ -145,9 +143,7 @@ def preprocess_articles(articles: list[dict], config: dict) -> list[dict]:
                 article["cleaned_text"] = cleaned
                 article["sentences"] = [sent.text for sent in doc.sents]
                 article["tokens"] = [tok.text for tok in doc if not tok.is_space]
-                article["pos_tags"] = [
-                    (tok.text, tok.pos_) for tok in doc if not tok.is_space
-                ]
+                article["pos_tags"] = [(tok.text, tok.pos_) for tok in doc if not tok.is_space]
             except Exception:
                 logger.exception(
                     "Failed to extract spaCy fields for article %r.",

@@ -74,26 +74,18 @@ def _stream_download(url: str, dest: Path) -> requests.Response:
             response = requests.get(url, timeout=REQUEST_TIMEOUT, stream=True)
         except (requests.Timeout, requests.ConnectionError) as exc:
             last_exc = exc
-            logger.warning(
-                "Network error on attempt %d for %s: %s", attempts, url, exc
-            )
+            logger.warning("Network error on attempt %d for %s: %s", attempts, url, exc)
             if attempts < 2:
                 time.sleep(RETRY_DELAY_SECONDS)
                 continue
-            raise RuntimeError(
-                f"Failed to download {url} after retry: {exc}"
-            ) from exc
+            raise RuntimeError(f"Failed to download {url} after retry: {exc}") from exc
 
         if 400 <= response.status_code < 500:
             response.close()
-            raise RuntimeError(
-                f"HTTP {response.status_code} for {url} (no retry on 4xx)"
-            )
+            raise RuntimeError(f"HTTP {response.status_code} for {url} (no retry on 4xx)")
         if response.status_code != 200:
             response.close()
-            raise RuntimeError(
-                f"HTTP {response.status_code} for {url}"
-            )
+            raise RuntimeError(f"HTTP {response.status_code} for {url}")
 
         with dest.open("wb") as fh:
             for chunk in response.iter_content(chunk_size=64 * 1024):
@@ -135,9 +127,7 @@ def _github_zip_fallback(source_url: str, raw_path: Path) -> None:
     parsed = urlparse(source_url.rstrip("/"))
     parts = [p for p in parsed.path.split("/") if p]
     if len(parts) < 2:
-        raise RuntimeError(
-            f"Cannot derive owner/repo from GitHub URL: {source_url}"
-        )
+        raise RuntimeError(f"Cannot derive owner/repo from GitHub URL: {source_url}")
     owner, repo = parts[0], parts[1].removesuffix(".git")
 
     last_error: Exception | None = None

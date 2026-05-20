@@ -4,17 +4,18 @@ import gc
 import logging
 import sys
 from pathlib import Path
+from typing import cast
 
 import torch
+from transformers import Pipeline
+from transformers import pipeline as hf_pipeline
 
 logger = logging.getLogger(__name__)
 
 RANDOM_SEED: int = 42
 
 
-def setup_logging(
-    log_file: str = "logs/pipeline.log", level: int = logging.INFO
-) -> None:
+def setup_logging(log_file: str = "logs/pipeline.log", level: int = logging.INFO) -> None:
     log_path = Path(log_file)
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -47,3 +48,16 @@ def release_model() -> None:
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
     logger.info("GPU cache cleared.")
+
+
+def make_hf_pipeline(task: str, **kwargs) -> Pipeline:
+    """Typed wrapper around `transformers.pipeline()`.
+
+    The transformers stub has ~40 overloads keyed off the `task` literal and
+    Pylance mis-resolves several of them. Taking `task` as a plain `str` here
+    bypasses the literal-overload matching. The cast keeps the return type
+    concrete so call sites don't need their own type assertions.
+    """
+    return cast(
+        Pipeline, hf_pipeline(task, **kwargs)
+    )  # pyright: ignore[reportCallIssue, reportArgumentType]
