@@ -40,6 +40,22 @@ def setup_logging(log_file: str = "logs/pipeline.log", level: int = logging.INFO
 
 
 def get_device() -> int:
+    """Return the HuggingFace device index for model loading.
+
+    Reads PIPELINE_DEVICE env var (set from config["device"] in the notebook):
+      "auto"  → GPU (0) if CUDA available, else CPU (-1)
+      "cpu"   → always CPU (-1)
+      "cuda"  → always GPU (0); raises RuntimeError if CUDA is unavailable
+    """
+    import os
+
+    setting = os.environ.get("PIPELINE_DEVICE", "auto").lower().strip()
+    if setting == "cpu":
+        return -1
+    if setting == "cuda":
+        if not torch.cuda.is_available():
+            raise RuntimeError("device='cuda' requested in config but no CUDA GPU found.")
+        return 0
     return 0 if torch.cuda.is_available() else -1
 
 
@@ -47,7 +63,9 @@ def release_model() -> None:
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
-    logger.info("GPU cache cleared.")
+        logger.info("GPU cache cleared.")
+    else:
+        logger.info("Model released (CPU run — no GPU cache to clear).")
 
 
 def make_hf_pipeline(task: str, **kwargs) -> Pipeline:

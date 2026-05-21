@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "Wikinews multilingual NLP analysis pipeline"
 requires-python = ">=3.10"
 dependencies = [
-    "torch>=2.1.0",
     "transformers>=4.40.0,<5.0.0",
     "sentence-transformers>=2.7.0,<3.0.0",
     "spacy>=3.7.0,<4.0.0",
@@ -28,6 +27,38 @@ dev = [
     "truststore>=0.10.4",
     "pre-commit>=4.6.0",
 ]
+
+# PyTorch is not on PyPI — CUDA builds live on PyTorch's own index.
+# Install one of the extras below; "cpu" is the safe default.
+#   uv sync --extra cpu        no GPU / unknown hardware
+#   uv sync --extra cu121      CUDA 12.1
+#   uv sync --extra cu124      CUDA 12.4  (check: nvidia-smi)
+[project.optional-dependencies]
+cpu   = ["torch>=2.1.0"]
+cu121 = ["torch>=2.1.0"]
+cu124 = ["torch>=2.1.0"]
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu",   extra = "cpu"   },
+  { index = "pytorch-cu121", extra = "cu121" },
+  { index = "pytorch-cu124", extra = "cu124" },
+]
+
+[[tool.uv.indexes]]
+name = "pytorch-cpu"
+url  = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.indexes]]
+name = "pytorch-cu121"
+url  = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[[tool.uv.indexes]]
+name = "pytorch-cu124"
+url  = "https://download.pytorch.org/whl/cu124"
+explicit = true
 
 [tool.ruff]
 line-length = 100

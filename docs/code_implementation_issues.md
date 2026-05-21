@@ -1080,3 +1080,28 @@ the change for reviewers.
 **Files.** `src/ner.py`, `tests/test_ner.py`,
 `notebooks/analysis.ipynb` (new markdown cell `ner-aggregation-note`),
 `docs/SPEC_v3.md`
+
+---
+
+## Notebook run — 2026-05-20
+
+### FIX-11 BART input truncation (summarizer.py)
+
+**Symptom.** Cell 14 logged `IndexError: index out of range in self` inside
+`BartLearnedPositionalEmbedding.forward` for article 31 (article 31/60 in
+the summarisation pool). The pipeline warning `"Asking to truncate to
+max_length but no maximum length is provided"` appeared at load time.
+
+**Root cause.** `summarize_article` passed `truncation=True` and
+`max_length=effective_max` to the pipeline together. In HuggingFace's
+summarisation pipeline, `max_length` governs **output** (generated summary)
+length, not input length. With no input truncation target, the pipeline
+silently skipped truncation. One article exceeded BART's 1024-token
+positional embedding table, causing `IndexError`.
+
+**Fix.** Pre-truncate the input via the tokenizer before the pipeline call:
+encode with `max_length=1024, truncation=True`, decode back to plain text,
+recalculate `token_count`. Removed `truncation=True` from the pipeline call
+since input is already within bounds.
+
+**Files.** `src/summarizer.py`

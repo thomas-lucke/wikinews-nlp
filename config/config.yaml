@@ -50,3 +50,7 @@ logging:
   log_file: "logs/pipeline.log"
 
 random_seed: 42
+
+# Device for all model inference. Options: "auto" (GPU if available, else CPU),
+# "cpu" (force CPU), "cuda" (force GPU — raises if unavailable).
+device: "auto"
