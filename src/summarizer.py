@@ -12,6 +12,11 @@ from src.utils import get_device, make_hf_pipeline
 logger = logging.getLogger(__name__)
 
 
+# BART's positional embedding table has 1026 entries (indices 0–1025, offset 2).
+# The pipeline adds BOS + EOS, so content must be ≤ 1022 tokens to keep the
+# total (1022 + 2 special) within the 1024-position limit.
+_BART_MAX_INPUT_TOKENS = 1022
+
 _SENTENCE_SPLIT_RE = re.compile(r"[.!?]")
 _REPEATED_WS_RE = re.compile(r"\s{2,}")
 _TERMINAL_PUNCT = (".", "!", "?")
@@ -61,7 +66,15 @@ def summarize_article(
         return None
 
     assert summ_pipeline.tokenizer is not None  # always set for summarization pipelines
-    token_count = len(summ_pipeline.tokenizer.encode(text, add_special_tokens=False))
+    # Pre-truncate to BART's positional limit before the pipeline sees the text.
+    # Passing truncation=True to the pipeline doesn't work here because max_length
+    # controls output length, not input, so the pipeline has no truncation target.
+    encoded = summ_pipeline.tokenizer.encode(
+        text, add_special_tokens=False, max_length=_BART_MAX_INPUT_TOKENS, truncation=True
+    )
+    token_count = len(encoded)
+    text = summ_pipeline.tokenizer.decode(encoded, skip_special_tokens=True)
+
     if token_count < min_length:
         logger.warning(
             "summarize_article: input token_count=%d < min_length=%d, returning None.",
@@ -78,7 +91,7 @@ def summarize_article(
     try:
         result = cast(
             list[dict[str, str]],
-            summ_pipeline(text, truncation=True, min_length=min_length, max_length=effective_max),
+            summ_pipeline(text, min_length=min_length, max_length=effective_max),
         )
     except Exception:
         logger.exception("summarize_article: pipeline raised; returning None.")

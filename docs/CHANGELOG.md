@@ -4,6 +4,19 @@ All notable changes are documented here. One-liners for minor changes; a short p
 
 ---
 
+## Summarizer fix & GPU/CPU setup — 2026-05-21
+
+### Fixed
+- **BART input truncation (FIX-11).** `summarize_article` passed `truncation=True` alongside `max_length` (which controls *output* length in HuggingFace summarisation pipelines), so no input truncation was applied. One article exceeded BART's 1024-token positional embedding table, raising `IndexError`. Fix: pre-truncate via the tokenizer to 1022 tokens (leaving 2 slots for BOS/EOS) before the pipeline call.
+
+### Added
+- **CPU/GPU switching.** PyTorch is moved out of main dependencies into three optional extras (`cpu`, `cu121`, `cu124`) with explicit PyTorch index URLs in `pyproject.toml`. Install with `uv sync --extra cpu` (default) or the matching CUDA extra.
+- `device` key in `config.yaml` (`"auto"` / `"cpu"` / `"cuda"`); Cell 2 pushes it to `PIPELINE_DEVICE` env var, read by `get_device()` in `src/utils.py`.
+- `release_model()` log message is now conditional: "GPU cache cleared" on CUDA, "Model released (CPU run)" on CPU.
+- README Quick start updated with `nvidia-smi` check, `uv sync --extra` options, and device config step.
+
+---
+
 ## Analysis run & bug fixes — 2026-05-20
 
 ### Fixed

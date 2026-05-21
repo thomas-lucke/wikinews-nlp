@@ -33,11 +33,37 @@ A 17-cell notebook orchestrates eight pipeline stages. Each stage lives in a ded
 
 This project uses [`uv`](https://github.com/astral-sh/uv) for dependency management.
 
-```powershell
-# 1. Install dependencies (creates .venv and installs everything from pyproject.toml / uv.lock)
-uv sync
+### 1. Install PyTorch
 
-# 2. Launch the notebook from the project root
+PyTorch CUDA builds are not on PyPI, so you pick your build at install time. Check your hardware first:
+
+```powershell
+nvidia-smi   # look for "CUDA Version: XX.X" — skip if no NVIDIA GPU
+```
+
+Then install the matching extra:
+
+```powershell
+uv sync --extra cpu        # no GPU, or unsure
+uv sync --extra cu121      # CUDA 12.1
+uv sync --extra cu124      # CUDA 12.4
+```
+
+`cpu` is the safe default — all pipeline stages work on CPU, just slower (~25 min end-to-end vs ~5 min on GPU).
+
+### 2. Set device in config
+
+Open [`config/config.yaml`](config/config.yaml) and set the `device` key to match your install:
+
+```yaml
+device: "auto"    # GPU if available, CPU otherwise (recommended)
+device: "cpu"     # force CPU
+device: "cuda"    # force GPU — errors if no CUDA GPU found
+```
+
+### 3. Launch the notebook
+
+```powershell
 uv run jupyter notebook notebooks/analysis.ipynb
 ```
 
@@ -72,6 +98,7 @@ Key knobs:
 | `ner.error_score_threshold` | 0.6 | Confidence below this is surfaced for manual review. |
 | `similarity.threshold` | 0.8 | Cosine score above this is considered "faithful". |
 | `random_seed` | 42 | Determinism for sampling and zero-shot topic prediction. |
+| `device` | `"auto"` | Inference device: `"auto"`, `"cpu"`, or `"cuda"`. |
 
 ---
 
